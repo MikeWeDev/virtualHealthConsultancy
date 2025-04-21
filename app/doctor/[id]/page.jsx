@@ -1,13 +1,8 @@
 import newDatas from '../ProductPage';
-import { CalendarDays, Mail, Stethoscope, Video, Headphones, MessageSquare } from 'lucide-react';
-import  Link  from 'next/link';
-type BadgeProps = {
-  children: React.ReactNode;
-  className?: string;
-  variant: 'outline' | 'filled';
-};
+import { CalendarDays, Mail, Stethoscope } from 'lucide-react';
+import Link from 'next/link';
 
-function Badge({ children, className = '', variant }: BadgeProps) {
+function Badge({ children, className = '', variant }) {
   const variantClasses = {
     outline: "border-2 border-gray-300 text-gray-700",
     filled: "bg-blue-500 text-white",
@@ -23,23 +18,10 @@ function Badge({ children, className = '', variant }: BadgeProps) {
 function Separator() {
   return <hr className="my-6 border-t-2 border-gray-200" />;
 }
-type ProductItem = {
-  Name: string;
-  fName: string;
-  id: number;
-  amount: number;
-  price: string;
-  img: string;
-  color: string;
-  time: string;
-  type?: string; // optional because one item was missing it
-};
 
-export default function DoctorProfile({ params }: { params: { id: string } }) {
+export default function DoctorDetailPage({ params }) {
   const { id } = params;
-  const doctor: ProductItem | undefined = newDatas.find(
-    (item) => item.id.toString() === id.toString()
-  );
+  const doctor = newDatas.find((item) => item.id.toString() === id.toString());
 
   if (!doctor) {
     return <div className="p-6 text-center text-red-600 text-xl">Doctor not found</div>;
@@ -77,8 +59,8 @@ export default function DoctorProfile({ params }: { params: { id: string } }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-10">
 
-           {/* Booking Section */}
-           <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
+          {/* Booking Section */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
             <div className="p-6 space-y-3">
               <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation</h2>
               <form className="space-y-4">
@@ -97,60 +79,48 @@ export default function DoctorProfile({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-         {/* Messaging Section */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
-          <div className="p-6 space-y-3">
-            <h2 className="text-xl font-semibold text-blue-800 mb-2">Send a Message</h2>
-
-            {/* Message textarea */}
-            <textarea 
-              rows={6} 
-              className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
-              placeholder="Type your message here..."
-            />
-
-            {/* File upload input */}
-            <div className="mt-4">
-              <label 
-                htmlFor="file-upload" 
-                className="block text-gray-600 mb-2"
-              >
-                Upload Document or Image
-              </label>
-              <input 
-                type="file" 
-                id="file-upload" 
-                accept="image/*,application/pdf" 
-                className="block w-full text-sm text-gray-600 file:py-2 file:px-4 file:border-0 file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+          {/* Messaging Section */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
+            <div className="p-6 space-y-3">
+              <h2 className="text-xl font-semibold text-blue-800 mb-2">Send a Message</h2>
+              <textarea 
+                rows={6} 
+                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                placeholder="Type your message here..."
               />
-            </div>
-
-            {/* Send Button */}
-          <div className="text-center mt-4">
-                 <Link href='/connect/chat' >
-
-              <button 
-                type="button" 
-                className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
-              >
-                Send
-              </button>
-              </Link>
-
+              <div className="mt-4">
+                <label htmlFor="file-upload" className="block text-gray-600 mb-2">
+                  Upload Document or Image
+                </label>
+                <input 
+                  type="file" 
+                  id="file-upload" 
+                  accept="image/*,application/pdf" 
+                  className="block w-full text-sm text-gray-600 file:py-2 file:px-4 file:border-0 file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+                />
+              </div>
+              <div className="text-center mt-4">
+                <Link href='/connect/chat'>
+                  <button 
+                    type="button" 
+                    className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
+                  >
+                    Send
+                  </button>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-
 
           {/* Video Call Section */}
           <div className="bg-blue-50 rounded-lg shadow-lg p-6 mt-8">
             <h2 className="text-2xl font-semibold text-blue-900 mb-4">Video Call</h2>
             <div className="text-center">
-                <Link href='/connect/videocall' >
-              <button className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
-                Start Video Call
-              </button>
-                </Link>
+              <Link href='/connect/videocall'>
+                <button className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
+                  Start Video Call
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -193,7 +163,6 @@ export default function DoctorProfile({ params }: { params: { id: string } }) {
               </p>
             </div>
           </div>
-
 
         </div>
       </div>

@@ -29,7 +29,7 @@ const ChatWindow = () => {
     // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
       console.log('Connected to socket server with id:', socketInstance.id);
-      setMySocketId(socketInstance.id);
+      setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     });
 

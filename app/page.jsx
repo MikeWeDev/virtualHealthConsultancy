@@ -3,28 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { IoArrowBack, IoArrowForward } from 'react-icons/io5';
-import newDatas from './ProductPage'; // Make sure this exports typed data as shown below
-import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa'; 
+import newDatas from './ProductPage';
 
-// ----------- Interfaces ------------
-interface ProductType {
-  id: string;
-  fName: string;
-  img: string;
-  color: string;
-  type: string;
-  time: string;
-}
-
-interface ReviewType {
-  name: string;
-  role: string;
-  feedback: string;
-  image: string;
-  rating: number;
-}
-
-const reviews: ReviewType[] = [
+const reviews = [
   {
     name: 'Emily R.',
     role: 'Therapist',
@@ -48,20 +29,29 @@ const reviews: ReviewType[] = [
   }
 ];
 
-const getStars = (rating: number): JSX.Element => {
-  const fullStars = Math.floor(rating); // Number of full stars
-  const halfStar = rating % 1 !== 0; // Is there a half star?
-  const emptyStars = 5 - Math.ceil(rating); // Number of empty stars
-}
+const getStars = (rating) => {
+  const fullStars = Math.floor(rating);
+  const halfStar = rating % 1 !== 0;
+  const emptyStars = 5 - Math.ceil(rating);
+
+  return (
+    <div className="text-yellow-500">
+      {[...Array(fullStars)].map((_, i) => <span key={`full-${i}`}>★</span>)}
+      {halfStar && <span>☆</span>}
+      {[...Array(emptyStars)].map((_, i) => <span key={`empty-${i}`}>✩</span>)}
+    </div>
+  );
+};
+
 export default function Home() {
-  const [product, setProduct] = useState<string>('');
-  const [color, setColor] = useState<string>('');
-  const [type, setType] = useState<string>('');
-  const [time, setTime] = useState<string>('');
-  const [carts, setCarts] = useState<ProductType[]>([]);
-  const [info, setInfo] = useState<(ProductType & { amount: number })[]>([]);
-  const [warning, setWarning] = useState<boolean>(false);
-  const [index, setIndex] = useState<number>(0);
+  const [product, setProduct] = useState('');
+  const [color, setColor] = useState('');
+  const [type, setType] = useState('');
+  const [time, setTime] = useState('');
+  const [carts, setCarts] = useState([]);
+  const [info, setInfo] = useState([]);
+  const [warning, setWarning] = useState(false);
+  const [index, setIndex] = useState(0);
 
   const nextReview = () => setIndex((prev) => (prev + 1) % reviews.length);
   const prevReview = () => setIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
@@ -73,7 +63,7 @@ export default function Home() {
 
   const { name, role, feedback, image, rating } = reviews[index];
 
-  const handleClick = (item: ProductType): void => {
+  const handleClick = (item) => {
     if (carts.some((cartItem) => cartItem.id === item.id)) {
       setWarning(true);
       alert('PRODUCT ALREADY EXISTS');
@@ -82,7 +72,7 @@ export default function Home() {
     }
   };
 
-  const handleInfoChange = (pro: ProductType, d: number = 1): void => {
+  const handleInfoChange = (pro, d = 1) => {
     const tempArr = [...info];
     const index = tempArr.findIndex((data) => data.id === pro.id);
 
@@ -97,15 +87,13 @@ export default function Home() {
   };
 
   const filteredProducts = newDatas
-    .filter((item: ProductType) => (color ? item.color === color : true))
-    .filter((item: ProductType) => (type ? item.type === type : true))
-    .filter((item: ProductType) => (time ? item.time === time : true))
-    .filter((item: ProductType) =>  product ? item.fName.toLowerCase().includes(product.toLowerCase()) : true
-    );
+    .filter((item) => (color ? item.color === color : true))
+    .filter((item) => (type ? item.type === type : true))
+    .filter((item) => (time ? item.time === time : true))
+    .filter((item) => product ? item.fName.toLowerCase().includes(product.toLowerCase()) : true);
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
       <header className="bg-white shadow-md p-4 flex justify-between items-center border-b-4 border-gray-300">
         <h1 className="text-2xl font-bold text-green-600">Khealth</h1>
         <nav>
@@ -121,14 +109,12 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* Hero Section */}
       <section className="text-left py-16 px-6 md:px-20 bg-green-100 border-b-4 border-gray-300">
         <h2 className="text-4xl font-bold text-green-700">Nurturing Health, Building Trust</h2>
         <p className="mt-4 text-gray-600 max-w-lg">Patient-centered care. We specialize in family medicine, pediatrics, and women’s health.</p>
         <button className="mt-6 bg-green-600 text-white px-6 py-2 rounded-lg">Visit Us Today</button>
       </section>
 
-      {/* Services */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 border-b-4 border-gray-300">
         {['placeholder-image1.jpg', 'placeholder-image2.jpg', 'placeholder-image3.jpg'].map((img, i) => (
           <div key={i} className="bg-gray-200 p-4 rounded-lg text-center shadow border-4 border-gray-400">
@@ -140,70 +126,59 @@ export default function Home() {
         ))}
       </section>
 
-      {/* Product Filters + Doctors */}
       <div className="mt-[80px] px-6 py-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-lg">
-  {/* Filters Section */}
-  <div className="flex flex-wrap justify-start gap-6 mb-8">
-    {/* Color Selector */}
-    <select
-      onChange={(e) => setColor(e.target.value)}
-      className="p-3 border border-gray-300 rounded-lg text-black w-[40%] sm:w-[25%] focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-    >
-      <option value="">Select Color</option>
-      <option value="black">Black</option>
-      <option value="blue">Blue</option>
-      <option value="white">White</option>
-      <option value="red">Red</option>
-    </select>
-
-    {/* Search Input */}
-    <input
-      type="text"
-      value={product}
-      onChange={(e) => setProduct(e.target.value)}
-      placeholder="Search Product"
-      className="p-3 border border-gray-300 rounded-lg w-[40%] sm:w-[25%] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-    />
-  </div>
-
-  {/* Product Grid Section */}
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-    {filteredProducts.map((item, index) => (
-      <div key={index} className="bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl transition-all ease-in-out transform hover:scale-105">
-        {/* Image Section */}
-        <div className="relative w-full h-48 rounded-md overflow-hidden">
-          <img
-            src={item.img}
-            alt={item.fName}
-            className="w-full h-full object-cover"
-          />
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black opacity-50 rounded-md"></div>
-        </div>
-
-        {/* Doctor Info Section */}
-        <div className="mt-4 text-center">
-          <h3 className="text-xl font-semibold text-blue-800">{item.fName}</h3>
-          <p className="text-sm text-gray-500">{item.color} - {item.type}</p>
-        </div>
-
-        {/* More Info Button */}
-        <div className="mt-4 flex justify-center">
-          <Link
-            href={`/doctor/${item.id}`}
-            onClick={() => handleInfoChange(item)}
-            className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors duration-300"
+        <div className="flex flex-wrap justify-start gap-6 mb-8">
+          <select
+            onChange={(e) => setColor(e.target.value)}
+            className="p-3 border border-gray-300 rounded-lg text-black w-[40%] sm:w-[25%] focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
           >
-            More Info
-          </Link>
+            <option value="">Select Color</option>
+            <option value="black">Black</option>
+            <option value="blue">Blue</option>
+            <option value="white">White</option>
+            <option value="red">Red</option>
+          </select>
+
+          <input
+            type="text"
+            value={product}
+            onChange={(e) => setProduct(e.target.value)}
+            placeholder="Search Product"
+            className="p-3 border border-gray-300 rounded-lg w-[40%] sm:w-[25%] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {filteredProducts.map((item, index) => (
+            <div key={index} className="bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl transition-all ease-in-out transform hover:scale-105">
+              <div className="relative w-full h-48 rounded-md overflow-hidden">
+                <img
+                  src={item.img}
+                  alt={item.fName}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black opacity-50 rounded-md"></div>
+              </div>
+
+              <div className="mt-4 text-center">
+                <h3 className="text-xl font-semibold text-blue-800">{item.fName}</h3>
+                <p className="text-sm text-gray-500">{item.color} - {item.type}</p>
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <Link
+                  href={`/doctor/${item.id}`}
+                  onClick={() => handleInfoChange(item)}
+                  className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors duration-300"
+                >
+                  More Info
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    ))}
-  </div>
-      </div>
 
-
-      {/* Reviews */}
       <div className="w-full min-h-[70vh] mt-5 bg-white flex flex-col items-center justify-center p-6">
         <h2 className="text-4xl font-bold mb-2 text-center text-gray-800">Patient Reviews</h2>
         <p className="text-gray-500 text-center max-w-xl mb-8">See what healthcare professionals are saying about our platform.</p>
@@ -224,7 +199,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-gray-800 text-white text-center py-4">
         <p>&copy; 2025 Khealth. All rights reserved.</p>
       </footer>

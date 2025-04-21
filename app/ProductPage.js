@@ -1,17 +1,5 @@
 
-export type ProductItem = {
-    Name: string;
-    fName: string;
-    id: number;
-    amount: number;
-    price: string;
-    img: string;
-    color: string;
-    time: string;
-    type?: string; // optional because one item was missing it
-  };
-
-  const newDatas: ProductItem[] = [
+  const newDatas = [
     {
         Name: "Dr. Alice Johnson",
         fName: "a",
@@ -231,6 +219,8 @@ export type ProductItem = {
         time: "new",
     },
 ];
+
+
 export default newDatas;
 
 

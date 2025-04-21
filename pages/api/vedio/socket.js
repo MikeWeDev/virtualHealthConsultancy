@@ -1,7 +1,15 @@
 import { Server } from 'socket.io';
 
 export default function handler(req, res) {
-  if (res.socket.server.io) {
+  // Ensure res.socket is not null
+  const socket = res.socket;
+  if (!socket) {
+    res.status(500).send("Socket is not available");
+    return;
+  }
+
+  // Check if the socket.io server is already running
+  if (socket.server.io) {
     console.log("Socket.io server already running");
     res.end();
     return;
@@ -9,13 +17,15 @@ export default function handler(req, res) {
 
   console.log("Starting new Socket.io server...");
 
-  // Initialize socket server
-  const io = new Server(res.socket.server, {
+  // Initialize the Socket.io server
+  const io = new Server(socket.server, {
     path: "/api/video/socket", // Specify the path for socket connection
   });
 
-  res.socket.server.io = io;
+  // Attach the io server to socket.server for future requests
+  socket.server.io = io;
 
+  // Listen for incoming socket connections
   io.on("connection", (socket) => {
     console.log("New socket connection:", socket.id);
 

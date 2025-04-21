@@ -5,7 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { useParams } from 'next/navigation';
 
 const VideoCall = () => {
-  const { id } = useParams(); // Automatically unwrapping params
+  const { id } = useParams() as { id: string };
   const roomId = id as string;
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const localVideo = useRef<HTMLVideoElement | null>(null);
@@ -125,14 +125,17 @@ const VideoCall = () => {
         <div className="flex-1 flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
           {remoteStream ? (
-            <video
-              ref={remoteVideo}
-              autoPlay
-              playsInline
-              className="w-full max-w-md border border-gray-300 rounded-lg shadow"
-              onLoadedMetadata={() => remoteVideo.current?.play()}
-              srcObject={remoteStream}
-            />
+          <video
+          ref={(el) => {
+            if (el && remoteStream) {
+              el.srcObject = remoteStream;
+            }
+            remoteVideo.current = el;
+          }}
+          autoPlay
+          playsInline
+          className="w-full max-w-md border border-gray-300 rounded-lg shadow"
+        />
           ) : (
             <div className="w-full max-w-md h-64 flex items-center justify-center bg-gray-200 border border-gray-300 rounded-lg shadow">
               <span className="text-gray-500">Waiting for remote user...</span>
@@ -146,8 +149,7 @@ const VideoCall = () => {
         {!isCalling ? (
           <button
             onClick={() => socket.current?.emit("user-joined")}
-            className="px-6 py-3 bg-green-500 text-white rounded-full shadow hover:bg-green-600 transition"
-          >
+            className="px-6 py-3 bg-green-500 text-white rounded-full shadow hover:bg-green-600 transition" >
             Join Call
           </button>
         ) : (
