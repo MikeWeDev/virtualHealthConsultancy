@@ -22,34 +22,9 @@ const ChatWindow = () => {
   const roomId = 'some-room-id'; // adjust or make dynamic if needed
 
   useEffect(() => {
-    const socketInstance = io(
-      'https://virtualhealthconsultancy-production.up.railway.app', // ← just the root domain
-      {
-        path: '/api/socket',                                     // ← mounts your Next.js API route
-      }
-    );
-  
-    socketInstance.on('connect', () => {
-      const id = socketInstance.id ?? '';      // if undefined, use empty string
-      setMySocketId(id);
-      socketInstance.emit('join', roomId);
+    const socketInstance = io('http://localhost:3000', {
+      path: '/api/socket',
     });
-  
-    socketInstance.on('signal', (incomingMessage: Message) => {
-      setMessages(prev =>
-        prev.some(m => m.id === incomingMessage.id)
-          ? prev
-          : [...prev, incomingMessage]
-      );
-    });
-  
-    socketInstance.on('user-joined', () => console.log('A user joined'));
-    socketInstance.on('user-left',   () => console.log('A user left'));
-  
-    setSocket(socketInstance);
-    return () => { socketInstance.disconnect(); };
-  }, [roomId]);
-  
 
     // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
