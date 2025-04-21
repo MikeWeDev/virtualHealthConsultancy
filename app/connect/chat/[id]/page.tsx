@@ -22,7 +22,7 @@ const ChatWindow = () => {
   const roomId = 'some-room-id'; // adjust or make dynamic if needed
 
   useEffect(() => {
-    const socketInstance = io('https://virualhealth.netlify.app/', {
+    const socketInstance = io('https://virualhealth.netlify.app/connect/chat/123', {
       path: '/api/socket',
     });
 
