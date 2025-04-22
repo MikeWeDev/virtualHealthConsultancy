@@ -7,86 +7,97 @@ import { useParams } from 'next/navigation';
 const VideoCall = () => {
   const { id } = useParams() as { id: string };
   const roomId = id;
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const localVideo = useRef<HTMLVideoElement | null>(null);
-  const remoteVideo = useRef<HTMLVideoElement | null>(null);
-  const pc = useRef<RTCPeerConnection | null>(null);
+  const [isCalling, setIsCalling] = useState(false);
+
   const socket = useRef<Socket | null>(null);
+  const pc = useRef<RTCPeerConnection | null>(null);
+  const localStream = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
 
-    // 1. Setup signaling socket
     socket.current = io('https://virtualhealthconsultancy-production.up.railway.app/', {
-      path: '/api/video/socket',
+      path: "/api/video/socket",
     });
 
-    // 2. Setup peer connection
     pc.current = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
 
-    // 3. Handle ICE candidate
+    // Handle remote track
+    pc.current.ontrack = (event) => {
+      const remote = event.streams[0];
+      setRemoteStream(remote);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remote;
+      }
+    };
+
+    // Handle ICE candidates
     pc.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.current?.emit('webrtc-signal', {
-          type: 'candidate',
+        socket.current?.emit("webrtc-signal", {
+          type: "candidate",
           candidate: event.candidate,
           roomId,
         });
       }
     };
 
-    // 4. Handle remote track
-    pc.current.ontrack = (event) => {
-      console.log('🎥 Remote track received');
-      setRemoteStream(event.streams[0]);
-    };
-
-    // 5. Get local media and join room
+    // Get local media
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-      setLocalStream(stream);
-      if (localVideo.current) {
-        localVideo.current.srcObject = stream;
+      localStream.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
       }
 
       stream.getTracks().forEach((track) => {
         pc.current?.addTrack(track, stream);
       });
 
-      socket.current?.emit('join-room', roomId);
+      socket.current?.emit("join", roomId);
     });
 
-    // 6. Handle signaling
-    socket.current.on('webrtc-signal', async (data) => {
+    // Listen for signaling data
+    socket.current.on("webrtc-signal", async (data) => {
       if (!pc.current) return;
 
       switch (data.type) {
-        case 'offer':
+        case "offer":
           await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
           const answer = await pc.current.createAnswer();
           await pc.current.setLocalDescription(answer);
-          socket.current?.emit('webrtc-signal', { type: 'answer', answer, roomId });
+          socket.current?.emit("webrtc-signal", { type: "answer", answer, roomId });
           break;
 
-        case 'answer':
+        case "answer":
           await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
           break;
 
-        case 'candidate':
-          if (data.candidate) {
-            await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-          }
+        case "candidate":
+          await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
           break;
       }
     });
 
-    // 7. Start call if second user joins
-    socket.current.on('ready-for-call', async () => {
-      const offer = await pc.current!.createOffer();
-      await pc.current!.setLocalDescription(offer);
-      socket.current?.emit('webrtc-signal', { type: 'offer', offer, roomId });
+    socket.current.on("user-joined", async () => {
+      if (!pc.current) return;
+
+      const offer = await pc.current.createOffer();
+      await pc.current.setLocalDescription(offer);
+      socket.current?.emit("webrtc-signal", { type: "offer", offer, roomId });
+      setIsCalling(true);
+    });
+
+    socket.current.on("user-left", () => {
+      setRemoteStream(null);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
     });
 
     return () => {
@@ -95,45 +106,53 @@ const VideoCall = () => {
     };
   }, [roomId]);
 
+  const endCall = () => {
+    socket.current?.emit("leave", roomId);
+    socket.current?.disconnect();
+    setIsCalling(false);
+    pc.current?.close();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8">
       <header className="w-full max-w-4xl px-4 py-6 bg-white shadow rounded-lg mb-8">
-        <h1 className="text-2xl font-bold text-center text-gray-800">
-          Room ID: {roomId}
-        </h1>
+        <h1 className="text-2xl font-bold text-center text-gray-800">Video Call Room: {roomId}</h1>
       </header>
 
       <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 px-4">
         <div className="flex-1 flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Your Video</h2>
-          <video
-            ref={localVideo}
-            autoPlay
-            playsInline
-            muted
-            className="w-full max-w-md border border-gray-300 rounded-lg shadow"
-          />
+          <video ref={localVideoRef} autoPlay playsInline muted className="w-full max-w-md rounded-lg shadow" />
         </div>
+
         <div className="flex-1 flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
           {remoteStream ? (
-            <video
-              ref={(el) => {
-                if (el && remoteStream) {
-                  el.srcObject = remoteStream;
-                }
-                remoteVideo.current = el;
-              }}
-              autoPlay
-              playsInline
-              className="w-full max-w-md border border-gray-300 rounded-lg shadow"
-            />
+            <video ref={remoteVideoRef} autoPlay playsInline className="w-full max-w-md rounded-lg shadow" />
           ) : (
-            <div className="w-full max-w-md h-64 flex items-center justify-center bg-gray-200 border border-gray-300 rounded-lg shadow">
+            <div className="w-full max-w-md h-64 flex items-center justify-center bg-gray-200 rounded-lg shadow">
               <span className="text-gray-500">Waiting for remote user...</span>
             </div>
           )}
         </div>
+      </div>
+
+      <div className="mt-8">
+        {!isCalling ? (
+          <button
+            onClick={() => socket.current?.emit("user-joined")}
+            className="px-6 py-3 bg-green-500 text-white rounded-full shadow hover:bg-green-600"
+          >
+            Join Call
+          </button>
+        ) : (
+          <button
+            onClick={endCall}
+            className="px-6 py-3 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
+          >
+            End Call
+          </button>
+        )}
       </div>
     </div>
   );
