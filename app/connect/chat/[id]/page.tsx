@@ -22,7 +22,7 @@ const ChatWindow = () => {
   const roomId = 'some-room-id'; // adjust or make dynamic if needed
 
   useEffect(() => {
-    const socketInstance = io('http://localhost:3000', {
+    const socketInstance = io('https://virtualhealthconsultancy-production.up.railway.app/', {
       path: '/api/socket',
     });
 

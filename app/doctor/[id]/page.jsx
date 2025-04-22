@@ -32,7 +32,7 @@ export default function DoctorDetailPage({ params }) {
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
         <div className="flex flex-col md:flex-row items-center gap-10 p-10">
           <img 
-            src={`/${doctor.img}`} 
+            src={doctor.img}
             alt={doctor.Name} 
             className="w-60 h-60 object-cover rounded-full border-4 border-blue-300 shadow-lg"
           />
@@ -100,7 +100,7 @@ export default function DoctorDetailPage({ params }) {
                 />
               </div>
               <div className="text-center mt-4">
-                <Link href='/connect/chat'>
+                <Link href='/connect/chat/123'>
                   <button 
                     type="button" 
                     className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
