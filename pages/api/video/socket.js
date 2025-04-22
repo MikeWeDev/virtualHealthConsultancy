@@ -39,14 +39,15 @@ export default function handler(req, res) {
 
       // Relay WebRTC signaling messages (offer, answer, candidate)
       socket.on("webrtc-signal", (data) => {
-        // Only broadcast to other clients in the room
         socket.to(roomId).emit("webrtc-signal", data);
       });
-      
+
+      // Handle disconnection
       socket.on("disconnect", () => {
-        socket.to(roomId).emit("user-left");
+        console.log(`🔴 Socket ${socket.id} disconnected from room: ${roomId}`);
+        socket.to(roomId).emit("user-left", socket.id);
       });
-      
+    });
 
     // Optional: handle manual leave
     socket.on("leave", (roomId) => {

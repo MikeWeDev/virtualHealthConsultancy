@@ -103,7 +103,7 @@ export default function Home() {
             <li><a href="#contact" className="text-gray-700">Contact</a></li>
             <li><a href="#locations" className="text-gray-700">Locations</a></li>
             <li>
-              <Image src="/user-avatar.jpg" alt="guest" width={30} height={30} className="rounded-full border-2 border-gray-400" />
+              <Image src="/home/photo_3_2025-04-22_22-05-16.jpg" alt="guest" width={30} height={30} className="rounded-full border-2 border-gray-400" />
             </li>
           </ul>
         </nav>
@@ -121,10 +121,12 @@ export default function Home() {
             <h4 className="text-xl font-semibold text-green-600">
               {['Elderly & Outpatient Care', 'Pediatrics', 'Compassionate Physicians'][i]}
             </h4>
-            <Image src={`/${img}`} alt={`service-${i}`} width={300} height={200} className="rounded-lg mx-auto border-4 border-gray-600" />
+            <Image src='/photo_3_2025-04-22_22-05-16.jpg' alt={`service-${i}`} width={300} height={200} className="rounded-lg mx-auto border-4 border-gray-600" />
           </div>
         ))}
       </section>
+
+
 
       <div className="mt-[80px] px-6 py-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-lg">
         <div className="flex flex-wrap justify-start gap-6 mb-8">
@@ -154,14 +156,14 @@ export default function Home() {
               <div className="relative w-full h-48 rounded-md overflow-hidden">
                 <img
                   src={item.img}
-                  alt={item.fName}
+                  alt={item.Name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black opacity-50 rounded-md"></div>
               </div>
 
               <div className="mt-4 text-center">
-                <h3 className="text-xl font-semibold text-blue-800">{item.fName}</h3>
+                <h3 className="text-xl font-semibold text-blue-800">{item.Name}</h3>
                 <p className="text-sm text-gray-500">{item.color} - {item.type}</p>
               </div>
 
