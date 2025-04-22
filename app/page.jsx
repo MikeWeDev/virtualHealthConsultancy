@@ -154,10 +154,10 @@ useEffect(() => {
                   <Link href='/patient'>
                     <div className="relative">
                       <Image
-                        src="/home/photo_3_2025-04-22_22-05-16.jpg"
+                        src="/doctorList/doctor1.jpg"
                         alt="guest"
-                        width={60}
-                        height={60}
+                        width={40}
+                        height={40}
                         className="rounded-full border-2 border-gray-400 hover:border-green-600 transition-all duration-300 ease-in-out transform hover:scale-110"
                       />
                     </div>
