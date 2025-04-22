@@ -19,8 +19,8 @@ function Separator() {
   return <hr className="my-6 border-t-2 border-gray-200" />;
 }
 
-export default function DoctorDetailPage({ params }) {
-  const { id } = params;
+export default async function DoctorDetailPage({ params }) {
+  const { id } =await  params;
   const doctor = newDatas.find((item) => item.id.toString() === id.toString());
 
   if (!doctor) {

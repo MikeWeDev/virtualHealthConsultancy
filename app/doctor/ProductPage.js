@@ -1,11 +1,11 @@
 
- const newDatas = [
+const newDatas = [
     {
         Name: "Dr. Alice Johnson",
         fName: "a",
         id: 1,
         amount: 1,
-        img: "https://randomuser.me/api/portraits/women/44.jpg",
+        img: "/doctorList/doctor1.jpg",
         price: `${34}$`,
         color: "black",
         time: "new",
@@ -17,7 +17,7 @@
         id: 2,
         amount: 1,
         price: `${45}$`,
-        img: "https://randomuser.me/api/portraits/men/65.jpg",
+        img: "/doctorList/doctor2.jpg",
         color: "others",
         type: "Dermatologist",
         time: "old"
@@ -28,7 +28,7 @@
         id: 3,
         amount: 1,
         price: `${80}$`,
-        img: "https://randomuser.me/api/portraits/women/60.jpg",
+        img: "/doctorList/doctor3.jpg",
         color: "white",
         type: "Pediatrician",
         time: "new",
@@ -39,7 +39,7 @@
         id: 4,
         amount: 1,
         price: `${76}$`,
-        img: "https://randomuser.me/api/portraits/men/43.jpg",
+        img: "/doctorList/doctor4.jpg",
         color: "black",
         type: "Orthopedic Surgeon",
         time: "old"
@@ -50,7 +50,7 @@
         id: 5,
         amount: 1,
         price: `${124}$`,
-        img: "https://randomuser.me/api/portraits/women/41.jpg",
+        img: "/doctorList/doctor5.jpg",
         color: "yellow",
         type: "Neurologist",
         time: "new"
@@ -61,7 +61,7 @@
         id: 6,
         amount: 1,
         price: `${18}$`,
-        img: "https://randomuser.me/api/portraits/men/50.jpg",
+        img: "/doctorList/doctor6.jpg",
         type: "Psychiatrist",
         color: "others",
         time: "old"
@@ -72,7 +72,7 @@
         id: 7,
         amount: 1,
         price: `${90}$`,
-        img: "https://randomuser.me/api/portraits/women/68.jpg",
+        img: "/doctorList/doctor7.jpg",
         type: "Gynecologist",
         color: "brown",
         time: "new"
@@ -83,7 +83,7 @@
         id: 8,
         amount: 1,
         price: `${38}$`,
-        img: "https://randomuser.me/api/portraits/men/35.jpg",
+        img: "/doctorList/doctor8.jpg",
         type: "Surgeon",
         color: "black",
         time: "new"
@@ -94,7 +94,7 @@
         id: 9,
         amount: 1,
         price: `${176}$`,
-        img: "https://randomuser.me/api/portraits/men/30.jpg",
+        img: "/doctorList/doctor9.jpg",
         type: "Plastic Surgeon",
         color: "black",
         time: "old",
@@ -105,7 +105,7 @@
         id: 10,
         amount: 1,
         price: `${118}$`,
-        img: "https://randomuser.me/api/portraits/women/50.jpg",
+        img: "/doctorList/doctor10.jpg",
         type: "Ophthalmologist",
         color: "black",
         time: "new",
@@ -116,7 +116,7 @@
         id: 11,
         amount: 1,
         price: `${90}$`,
-        img: "https://randomuser.me/api/portraits/men/55.jpg",
+        img: "/doctorList/doctor11.jpg",
         type: "ENT Specialist",
         color: "others",
         time: "old",
@@ -127,7 +127,7 @@
         id: 12,
         amount: 1,
         price: `${66}$`,
-        img: "https://randomuser.me/api/portraits/women/53.jpg",
+        img: "/doctorList/doctor12.jpg",
         type: "Dentist",
         color: "others",
         time: "new"
@@ -138,7 +138,7 @@
         id: 13,
         amount: 1,
         price: `${76}$`,
-        img: "https://randomuser.me/api/portraits/men/40.jpg",
+        img: "/doctorList/doctor13.jpg",
         type: "Endocrinologist",
         color: "white",
         time: "old"
@@ -149,7 +149,7 @@
         id: 14,
         amount: 1,
         price: `${89}$`,
-        img: "https://randomuser.me/api/portraits/women/31.jpg",
+        img: "/doctorList/doctor14.jpg",
         type: "Family Medicine",
         color: "black",
         time: "new",
@@ -160,7 +160,7 @@
         id: 15,
         amount: 1,
         price: `${56}$`,
-        img: "https://randomuser.me/api/portraits/men/26.jpg",
+        img: "/doctorList/doctor15.jpg",
         type: "Rheumatologist",
         color: "others",
         time: "old",
@@ -171,54 +171,15 @@
         id: 16,
         amount: 1,
         price: `${46}$`,
-        img: "https://randomuser.me/api/portraits/women/42.jpg",
+        img: "/doctorList/doctor16.jpg",
         color: "black",
         time: "new",
     },
-    {
-        Name: "Dr. William Nelson",
-        fName: "w",
-        id: 17,
-        amount: 1,
-        price: `${32}$`,
-        img: "https://randomuser.me/api/portraits/men/32.jpg",
-        type: "Anesthesiologist",
-        color: "white",
-        time: "old",
-    },
-    {
-        Name: "Dr. Sophia Wilson",
-        fName: "s",
-        id: 18,
-        amount: 1,
-        price: `${26}$`,
-        img: "https://randomuser.me/api/portraits/women/49.jpg",
-        color: "white",
-        time: "new",
-    },
-    {
-        Name: "Dr. Matthew Harris",
-        fName: "m",
-        id: 19,
-        amount: 1,
-        price: `${32}$`,
-        img: "https://randomuser.me/api/portraits/men/57.jpg",
-        type: "Nephrologist",
-        color: "red",
-        time: "old",
-    },
-    {
-        Name: "Dr. Angela Thompson",
-        fName: "a",
-        id: 20,
-        amount: 1,
-        price: `${26}$`,
-        img: "https://randomuser.me/api/portraits/women/38.jpg",
-        type: "General Physician",
-        color: "white",
-        time: "new",
-    },
+   
+   
 ];
+
+
 export default newDatas;
 
 
