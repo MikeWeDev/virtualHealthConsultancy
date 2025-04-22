@@ -18,7 +18,7 @@ const VideoCall = () => {
     if (!roomId) return;
 
     // Initialize socket connection for video signaling.
-    socket.current = io("https://virualhealth.netlify.app/", {
+    socket.current = io('https://virtualhealthconsultancy-production.up.railway.app/', {
       path: "/api/video/socket",
     });
 
