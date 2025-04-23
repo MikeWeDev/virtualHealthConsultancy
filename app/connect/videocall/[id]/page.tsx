@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 const VideoCall = () => {
   const { id } = useParams() as { id: string };
   const roomId = id;
+
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -27,18 +28,21 @@ const VideoCall = () => {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
 
-    // Handle remote track
+    // When we receive a remote track
     pc.current.ontrack = (event) => {
+      console.log("📡 Received remote track:", event.streams);
       const remote = event.streams[0];
-      if (!remoteVideoRef.current?.srcObject) {
-        setRemoteStream(remote);
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remote;
-        }
+      setRemoteStream(remote);
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remote;
+        remoteVideoRef.current.onloadedmetadata = () => {
+          remoteVideoRef.current?.play().catch(err => console.warn("Play error:", err));
+        };
       }
     };
 
-    // Handle ICE candidates
+    // ICE Candidate
     pc.current.onicecandidate = (event) => {
       if (event.candidate) {
         socket.current?.emit("webrtc-signal", {
@@ -49,26 +53,33 @@ const VideoCall = () => {
       }
     };
 
-    // Get local media
+    // Local media
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+      console.log("🎥 Got local stream");
       localStream.current = stream;
+
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.onloadedmetadata = () => {
+          localVideoRef.current?.play().catch(err => console.warn("Local play error:", err));
+        };
       }
 
       stream.getTracks().forEach((track) => {
+        console.log("🔊 Adding track:", track);
         pc.current?.addTrack(track, stream);
       });
 
       socket.current?.emit("join", roomId);
     });
 
-    // Listen for signaling data
+    // Listen to signaling
     socket.current.on("webrtc-signal", async (data) => {
       if (!pc.current) return;
 
       switch (data.type) {
         case "offer":
+          console.log("📨 Received offer");
           await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
           const answer = await pc.current.createAnswer();
           await pc.current.setLocalDescription(answer);
@@ -76,26 +87,33 @@ const VideoCall = () => {
           break;
 
         case "answer":
+          console.log("📨 Received answer");
           await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
           break;
 
         case "candidate":
-          await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          console.log("📨 Received candidate");
+          try {
+            await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (err) {
+            console.error("Error adding received ice candidate", err);
+          }
           break;
       }
     });
 
-    // Another user joined, create an offer
+    // When another user joins
     socket.current.on("user-joined", async () => {
       if (!pc.current) return;
 
+      console.log("👥 New user joined, creating offer");
       const offer = await pc.current.createOffer();
       await pc.current.setLocalDescription(offer);
       socket.current?.emit("webrtc-signal", { type: "offer", offer, roomId });
     });
 
-    // When user leaves
     socket.current.on("user-left", () => {
+      console.log("👋 Remote user left");
       setRemoteStream(null);
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = null;
@@ -103,16 +121,26 @@ const VideoCall = () => {
     });
 
     return () => {
+      console.log("🧹 Cleaning up connection");
       socket.current?.emit("leave", roomId);
       socket.current?.disconnect();
       pc.current?.close();
     };
   }, [roomId]);
 
+  // Ensure video ref updates when state changes
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
   const endCall = () => {
+    console.log("📞 Ending call");
     socket.current?.emit("leave", roomId);
     socket.current?.disconnect();
     pc.current?.close();
+
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     setRemoteStream(null);
