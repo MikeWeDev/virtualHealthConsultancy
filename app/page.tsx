@@ -1,23 +1,25 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default  function Login() {
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); 
-  const [loading, setLoading] = useState(false);
-  const [gotoclient,setGotoclient]=useState(true)
+interface LoginData {
+  name: string;
+  password: string;
+}
+
+export default function Login() {
+  const [name, setName] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>(""); 
+  const [loading, setLoading] = useState<boolean>(false);
+  const [gotoclient, setGotoclient] = useState<boolean>(true);
   const router = useRouter();
 
-  useEffect(() => {
-    // Pre-warm DB connection by hitting the warmup route
-    fetch("/api/warmup");
-  }, []);
 
 
   const API_BASE_URL = "/api/login";  // Use Next.js internal API route
+
   const handleLogin = async () => {
     setError("");  // Reset error before submitting
     setLoading(true);  // Start loading
@@ -38,14 +40,11 @@ export default  function Login() {
 
         // Optionally store token (you may want to use cookies for production)
         localStorage.setItem("auth_token", token);  // Or set in cookies
-       if(gotoclient === true){
-        router.push("/home");  // Redirect to home page after login
-       }
-       else{
-        router.push("/doctorProfile");  // Redirect to home page after login
-       }
-       
-
+        if (gotoclient === true) {
+          router.push("/home");  // Redirect to home page after login
+        } else {
+          router.push("/doctorProfile");  // Redirect to doctor profile
+        }
       } else {
         setError(data.error || "Unknown error");
       }
@@ -62,10 +61,9 @@ export default  function Login() {
         <div className="text-center mb-6 m-4">
           <h2 className="text-3xl font-bold text-gray-700">ET-HEALTH</h2>
           <h2 className="text-3xl font-bold text-red-700">Mike,4645</h2>
-
         </div>
         {error && <p className="text-red-500 text-center">{error}</p>}
-        
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -115,7 +113,7 @@ export default  function Login() {
               Log in
             </button>
           )}
-          
+
           <button
             type="button"
             className="w-full bg-blue-900 text-white p-2 rounded-lg font-semibold hover:bg-blue-600 transition"
@@ -130,16 +128,15 @@ export default  function Login() {
         </form>
 
         <div className="absolute top-4 right-4">
-       <select
-    className="p-1 border rounded-md bg-white"
-     onChange={(e) => setGotoclient(e.target.value === "patient")}
-      >
-     <option value="patient">Patient (PR)</option>
-    <option value="doctor">Doctor (DR)</option>
-  </select>
-</div>
+          <select
+            className="p-1 border rounded-md bg-white"
+            onChange={(e) => setGotoclient(e.target.value === "patient")}
+          >
+            <option value="patient">Patient (PR)</option>
+            <option value="doctor">Doctor (DR)</option>
+          </select>
+        </div>
       </div>
     </div>
   );
 }
-

@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/home/ProductPage.js", "app/doctor/ProductPage.js", "app/doctor/[id]/page.jsx", "app/page.jsx", "pages/api/video/socket.js", "pages/api/socket.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/home/ProductPage.js", "app/doctor/ProductPage.js", "app/doctor/[id]/page.jsx", "app/page.tsx", "pages/api/video/socket.js", "pages/api/socket.js", "app/api/login/route.ts"],
   "exclude": ["node_modules"]
 }
