@@ -153,21 +153,33 @@ const VideoCall = () => {
       </header>
 
       <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 px-4">
-        <div className="flex-1 flex flex-col items-center">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Your Video</h2>
-          <video ref={localVideoRef} autoPlay playsInline muted className="w-full max-w-md rounded-lg shadow" />
-        </div>
+                        <div className="flex-1 flex flex-col items-center">
+                          <h2 className="text-xl font-semibold mb-4 text-gray-700">Your Video</h2>
+                          <video
+                            ref={localVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-64 max-w-md object-cover rounded-lg shadow"
+                          />
+                        </div>
 
-        <div className="flex-1 flex flex-col items-center">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
-          {remoteStream ? (
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full max-w-md rounded-lg shadow" />
-          ) : (
-            <div className="w-full max-w-md h-64 flex items-center justify-center bg-gray-200 rounded-lg shadow">
-              <span className="text-gray-500">Waiting for remote user...</span>
-            </div>
-          )}
-        </div>
+                        <div className="flex-1 flex flex-col items-center">
+                          <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
+                          {remoteStream ? (
+                            <video
+                              ref={remoteVideoRef}
+                              autoPlay
+                              playsInline
+                              className="w-full h-64 max-w-md object-cover rounded-lg shadow"
+                            />
+                          ) : (
+                            <div className="w-full h-64 max-w-md flex items-center justify-center bg-gray-200 rounded-lg shadow">
+                              <span className="text-gray-500">Waiting for remote user...</span>
+                            </div>
+                          )}
+                        </div>
+
       </div>
 
       <div className="mt-8">
