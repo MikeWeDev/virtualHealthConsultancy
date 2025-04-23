@@ -1,7 +1,7 @@
 import newDatas from '../ProductPage';
 import { CalendarDays, Mail, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
-
+import BookingSection from '../../../components/booking/boking'
 function Badge({ children, className = '', variant }) {
   const variantClasses = {
     outline: "border-2 border-gray-300 text-gray-700",
@@ -30,7 +30,7 @@ export default async function DoctorDetailPage({ params }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-10 px-6 md:px-20">
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
-        <div className="flex flex-col md:flex-row items-center gap-10 p-10">
+        <div className="flex flex-col md:flex-row items-center gap-10 p-5">
           <img 
             src={doctor.img}
             alt={doctor.Name} 
@@ -57,82 +57,38 @@ export default async function DoctorDetailPage({ params }) {
 
         <Separator />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6  px-5">
 
           {/* Booking Section */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
-            <div className="p-6 space-y-3">
-              <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation</h2>
-              <form className="space-y-4">
-                <div>
-                  <label htmlFor="date" className="block text-gray-600">Select Date</label>
-                  <input type="date" id="date" className="w-full p-3 border border-gray-300 rounded-lg shadow-sm" />
-                </div>
-                <div>
-                  <label htmlFor="time" className="block text-gray-600">Select Time</label>
-                  <input type="time" id="time" className="w-full p-3 border border-gray-300 rounded-lg shadow-sm" />
-                </div>
-                <button type="submit" className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
-                  Book Now
-                </button>
-              </form>
-            </div>
+           <BookingSection />
           </div>
+                       <div className="space-y-10 mt-24">
+                        {[
+                          {
+                            title: "MESSAGE",
+                            link: "/connect/chat/123",
+                            buttonLabel: "Start Messaging",
+                          },
+                          {
+                            title: "Video Call",
+                            link: "/connect/videocall/123",
+                            buttonLabel: "Start Video Call",
+                          },
+                        ].map(({ title, link, buttonLabel }) => (
+                          <div key={title} className="bg-blue-50 rounded-lg shadow-lg p-4">
+                            <h2 className="text-xl font-semibold text-blue-900 mb-3 text-center">{title}</h2>
+                            <div className="text-center">
+                              <Link href={link}>
+                                <button className="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
+                                  {buttonLabel}
+                                </button>
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
 
-          {/* Messaging Section */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
-            <div className="p-6 space-y-3">
-              <h2 className="text-xl font-semibold text-blue-800 mb-2">Send a Message</h2>
-              <textarea 
-                rows={6} 
-                className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                placeholder="Type your message here..."
-              />
-              <div className="mt-4">
-                <label htmlFor="file-upload" className="block text-gray-600 mb-2">
-                  Upload Document or Image
-                </label>
-                <input 
-                  type="file" 
-                  id="file-upload" 
-                  accept="image/*,application/pdf" 
-                  className="block w-full text-sm text-gray-600 file:py-2 file:px-4 file:border-0 file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-                />
-              </div>
-              <div className="text-center mt-4">
-                <Link href='/connect/chat/123'>
-                  <button 
-                    type="button" 
-                    className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
-                  >
-                    Send
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Video Call Section */}
-          <div className="bg-blue-50 rounded-lg shadow-lg p-6 mt-8">
-            <h2 className="text-2xl font-semibold text-blue-900 mb-4">Video Call</h2>
-            <div className="text-center">
-              <Link href='/connect/videocall'>
-                <button className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
-                  Start Video Call
-                </button>
-              </Link>
-            </div>
-          </div>
-
-          {/* Audio Call Section */}
-          <div className="bg-blue-50 rounded-lg shadow-lg p-6 mt-8">
-            <h2 className="text-2xl font-semibold text-blue-900 mb-4">Audio Call</h2>
-            <div className="text-center">
-              <button className="bg-green-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-green-700 transition duration-300">
-                Start Audio Call
-              </button>
-            </div>
-          </div>
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6 space-y-3">

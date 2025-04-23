@@ -11,7 +11,6 @@ const VideoCall = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [isCalling, setIsCalling] = useState(false);
 
   const socket = useRef<Socket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
@@ -31,9 +30,11 @@ const VideoCall = () => {
     // Handle remote track
     pc.current.ontrack = (event) => {
       const remote = event.streams[0];
-      setRemoteStream(remote);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remote;
+      if (!remoteVideoRef.current?.srcObject) {
+        setRemoteStream(remote);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remote;
+        }
       }
     };
 
@@ -84,15 +85,16 @@ const VideoCall = () => {
       }
     });
 
+    // Another user joined, create an offer
     socket.current.on("user-joined", async () => {
       if (!pc.current) return;
 
       const offer = await pc.current.createOffer();
       await pc.current.setLocalDescription(offer);
       socket.current?.emit("webrtc-signal", { type: "offer", offer, roomId });
-      setIsCalling(true);
     });
 
+    // When user leaves
     socket.current.on("user-left", () => {
       setRemoteStream(null);
       if (remoteVideoRef.current) {
@@ -101,6 +103,7 @@ const VideoCall = () => {
     });
 
     return () => {
+      socket.current?.emit("leave", roomId);
       socket.current?.disconnect();
       pc.current?.close();
     };
@@ -109,8 +112,10 @@ const VideoCall = () => {
   const endCall = () => {
     socket.current?.emit("leave", roomId);
     socket.current?.disconnect();
-    setIsCalling(false);
     pc.current?.close();
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    setRemoteStream(null);
   };
 
   return (
@@ -138,21 +143,12 @@ const VideoCall = () => {
       </div>
 
       <div className="mt-8">
-        {!isCalling ? (
-          <button
-            onClick={() => socket.current?.emit("user-joined")}
-            className="px-6 py-3 bg-green-500 text-white rounded-full shadow hover:bg-green-600"
-          >
-            Join Call
-          </button>
-        ) : (
-          <button
-            onClick={endCall}
-            className="px-6 py-3 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
-          >
-            End Call
-          </button>
-        )}
+        <button
+          onClick={endCall}
+          className="px-6 py-3 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
+        >
+          End Call
+        </button>
       </div>
     </div>
   );
