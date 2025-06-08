@@ -1,17 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
-
-// Valid Google Fonts
-const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
-const robotoMono = Roboto_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Virtual health",
@@ -25,7 +13,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
+      <head>
+        {/* Manually load Google Fonts Inter and Roboto Mono */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Mono&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased">
         {children}
       </body>
     </html>
