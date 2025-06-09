@@ -57,20 +57,22 @@ const ChatWindow = () => {
     };
   }, [roomId]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && socket) {
-      // Generate a strong unique ID (using Date.now, crypto.randomUUID for extra uniqueness)
-      const messageToSend: Message = {
-        id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id, // mark this as your message
-        content: newMessage,
-      };
+const handleSendMessage = () => {
+  if (newMessage.trim() && socket && socket.connected) {
+    const messageToSend: Message = {
+      id: `${Date.now()}-${crypto.randomUUID()}`,
+      senderId: socket.id,
+      content: newMessage,
+    };
 
-      // We only emit the message (and let our socket event add it via the received event)
-      socket.emit('signal', messageToSend);
-      setNewMessage('');
-    }
-  };
+    // Emit message
+    socket.emit('signal', messageToSend);
+    setNewMessage(''); // clear input
+  } else {
+    console.warn("Socket not connected or message empty");
+  }
+};
+
 
   const handleSendFile = () => {
     if (!file || !socket) return;

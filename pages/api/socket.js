@@ -1,39 +1,46 @@
-import { Server } from "socket.io";
+import { Server } from 'socket.io';
 
 export default function handler(req, res) {
   if (res.socket.server.io) {
-    console.log("Socket.io server already running");
+    console.log('Socket.io server already running');
     res.end();
     return;
   }
 
-  console.log("Starting new Socket.io server...");
-
+  console.log('Starting new Socket.io server...');
   const io = new Server(res.socket.server, {
-    path: "/api/socket",
+    path: '/api/socket',
+    addTrailingSlash: false,
   });
 
   res.socket.server.io = io;
 
-  io.on("connection", (socket) => {
-    console.log("New socket connection:", socket.id);
+  io.on('connection', (socket) => {
+    console.log('New socket connection:', socket.id);
 
-    socket.on("join", (roomId) => {
+    // Store current roomId (if any) for this socket
+    let currentRoomId = null;
+
+    socket.on('join', (roomId) => {
+      currentRoomId = roomId;
       socket.join(roomId);
       console.log(`Socket ${socket.id} joined room: ${roomId}`);
+      socket.to(roomId).emit('user-joined');
+    });
 
-      // Let others in the room know a user joined (optional)
-      socket.to(roomId).emit("user-joined");
+    socket.on('signal', (data) => {
+      if (currentRoomId) {
+        io.to(currentRoomId).emit('signal', data);
+      } else {
+        console.warn('signal sent but no room joined yet');
+      }
+    });
 
-      // Broadcast 'signal' to everyone in the room, including sender
-      socket.on("signal", (data) => {
-        io.to(roomId).emit("signal", data); // <== THIS is the key change!
-      });
-
-      socket.on("disconnect", () => {
-        console.log(`Socket ${socket.id} left room: ${roomId}`);
-        socket.to(roomId).emit("user-left");
-      });
+    socket.on('disconnect', () => {
+      console.log(`Socket ${socket.id} disconnected`);
+      if (currentRoomId) {
+        socket.to(currentRoomId).emit('user-left');
+      }
     });
   });
 
