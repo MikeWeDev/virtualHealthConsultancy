@@ -17,12 +17,11 @@ const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socket = useRef<Socket | null>(null);
   const [mySocketId, setMySocketId] = useState('');
-  const roomId = 'some-room-id'; // Change this if needed
+  const roomId = 'some-room-id'; // Replace if needed
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when messages update
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -36,6 +35,8 @@ const ChatWindow = () => {
       path: '/api/socket',
     });
 
+    socket.current = socketInstance;
+
     socketInstance.on('connect', () => {
       console.log('✅ Connected with ID:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
@@ -48,7 +49,6 @@ const ChatWindow = () => {
 
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
-        // Prevent duplicates by ID
         if (prevMessages.some((msg) => msg.id === incomingMessage.id)) return prevMessages;
         return [...prevMessages, incomingMessage];
       });
@@ -62,25 +62,22 @@ const ChatWindow = () => {
       console.log('🚪 A user left');
     });
 
-    setSocket(socketInstance);
-
     return () => {
       socketInstance.disconnect();
     };
   }, [roomId]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && socket && socket.connected) {
+    if (newMessage.trim() && socket.current && socket.current.connected) {
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
         senderId: mySocketId,
         content: newMessage.trim(),
       };
 
-      // Optimistically add message locally immediately
       setMessages((prev) => [...prev, messageToSend]);
 
-      socket.emit('signal', messageToSend);
+      socket.current.emit('signal', messageToSend);
       setNewMessage('');
     } else {
       console.warn('⚠️ Socket not connected or message is empty');
@@ -88,7 +85,7 @@ const ChatWindow = () => {
   };
 
   const handleSendFile = () => {
-    if (!file || !socket || !socket.connected) return;
+    if (!file || !socket.current || !socket.current.connected) return;
 
     const fileUrl = URL.createObjectURL(file);
 
@@ -102,10 +99,9 @@ const ChatWindow = () => {
       },
     };
 
-    // Optimistically add file message locally
     setMessages((prev) => [...prev, fileMessage]);
 
-    socket.emit('signal', fileMessage);
+    socket.current.emit('signal', fileMessage);
     setFile(null);
   };
 

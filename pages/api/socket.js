@@ -29,7 +29,8 @@ export default function handler(req, res) {
 
     socket.on('signal', (data) => {
       if (currentRoomId) {
-        io.to(currentRoomId).emit('signal', data);
+        // ✅ FIXED: Don't broadcast back to sender
+        socket.to(currentRoomId).emit('signal', data);
       } else {
         console.warn('signal sent but no room joined yet');
       }
