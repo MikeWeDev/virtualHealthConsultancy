@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 interface Message {
   id: string;
-  senderId: string;
+  senderId: string; // used to determine if the message is yours or from someone else
   content?: string;
   file?: {
     name: string;
@@ -15,49 +15,42 @@ interface Message {
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
-  const socket = useRef<Socket | null>(null);
-  const [mySocketId, setMySocketId] = useState('');
-  const roomId = 'some-room-id';
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(scrollToBottom, [messages]);
+  const [socket, setSocket] = useState<any>(null);
+  const [mySocketId, setMySocketId] = useState<string>(''); // store our own socket id
+  const roomId = 'some-room-id'; // adjust or make dynamic if needed
 
   useEffect(() => {
     const socketInstance = io('https://virtual-health-one.vercel.app', {
       path: '/api/socket',
     });
 
-    socket.current = socketInstance;
-
+    // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
+      console.log('Connected to socket server with id:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     });
 
-    socketInstance.on('connect_error', (err) => {
-      console.error('❌ Connection error:', err.message);
-    });
-
+    // Listen for incoming messages (the server is echoing messages via 'signal')
     socketInstance.on('signal', (incomingMessage: Message) => {
-      setMessages((prev) => {
-        if (prev.some((msg) => msg.id === incomingMessage.id)) return prev;
-        return [...prev, incomingMessage];
+      setMessages((prevMessages) => {
+        // Prevent duplicate messages by checking senderId and id
+        const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
+        return exists ? prevMessages : [...prevMessages, incomingMessage];
       });
     });
 
+    // Log join/leave events
     socketInstance.on('user-joined', () => {
-      console.log('👤 A new user joined');
+      console.log('A new user joined');
+    });
+    socketInstance.on('user-left', () => {
+      console.log('A user left');
     });
 
-    socketInstance.on('user-left', () => {
-      console.log('🚪 A user left');
-    });
+    setSocket(socketInstance);
 
     return () => {
       socketInstance.disconnect();
@@ -65,30 +58,28 @@ const ChatWindow = () => {
   }, [roomId]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && socket.current?.connected) {
+    if (newMessage.trim() && socket) {
+      // Generate a strong unique ID (using Date.now, crypto.randomUUID for extra uniqueness)
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: mySocketId,
-        content: newMessage.trim(),
+        senderId: socket.id, // mark this as your message
+        content: newMessage,
       };
 
-      setMessages((prev) => [...prev, messageToSend]);
-
-      socket.current.emit('signal', messageToSend);
+      // We only emit the message (and let our socket event add it via the received event)
+      socket.emit('signal', messageToSend);
       setNewMessage('');
-    } else {
-      console.warn('⚠️ Socket not connected or message is empty');
     }
   };
 
   const handleSendFile = () => {
-    if (!file || !socket.current?.connected) return;
+    if (!file || !socket) return;
 
     const fileUrl = URL.createObjectURL(file);
 
     const fileMessage: Message = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      senderId: mySocketId,
+      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random().toString(36).substr(2, 9)}`,
+      senderId: socket.id,
       file: {
         name: file.name,
         url: fileUrl,
@@ -96,18 +87,23 @@ const ChatWindow = () => {
       },
     };
 
-    setMessages((prev) => [...prev, fileMessage]);
-    socket.current.emit('signal', fileMessage);
+    setMessages((prevMessages) => {
+      const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
+      return exists ? prevMessages : [...prevMessages, fileMessage];
+    });
+
+    socket.emit('signal', fileMessage);
     setFile(null);
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto p-0 bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col h-[600px]">
-      <div className="flex items-center gap-4 p-4 border-b bg-green-500 text-white rounded-t-lg">
+      {/* Top Navbar */}
+      <div className="flex items-center gap-4 p-4 border-b bg-blue-500 text-white rounded-t-lg">
         <img
           src="https://randomuser.me/api/portraits/men/32.jpg"
           alt="Doctor Avatar"
@@ -119,19 +115,24 @@ const ChatWindow = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      {/* Message List */}
+      <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
-            key={msg.id}
-            className={`flex ${msg.senderId === mySocketId ? 'justify-end' : 'justify-start'}`}
+            key={msg.id} /* now that id is consistent, we can use it as key */
+            className={`flex ${
+              msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
+            }`}
           >
             <div
-              className={`group relative max-w-xs p-3 rounded-lg text-sm shadow
-                ${msg.senderId === mySocketId
+              className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${
+                msg.senderId === mySocketId
                   ? 'bg-blue-500 text-white rounded-br-none'
-                  : 'bg-gray-200 text-black rounded-bl-none'}`}
+                  : 'bg-gray-200 text-black rounded-bl-none'
+              }`}
             >
               {msg.content && <p>{msg.content}</p>}
+
               {msg.file && (
                 <div className="flex flex-col gap-1 mt-2">
                   {msg.file.type.startsWith('image') ? (
@@ -156,6 +157,8 @@ const ChatWindow = () => {
                   </a>
                 </div>
               )}
+
+              {/* Delete Button */}
               <button
                 onClick={() => handleDeleteMessage(msg.id)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md"
@@ -166,9 +169,9 @@ const ChatWindow = () => {
             </div>
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
+      {/* Input Section */}
       <div className="p-4 border-t bg-white flex flex-col gap-3">
         <div className="flex gap-2">
           <input
@@ -177,12 +180,6 @@ const ChatWindow = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
           />
           <button
             onClick={handleSendMessage}
@@ -214,3 +211,6 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
+
+
+
