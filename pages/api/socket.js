@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
-import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default function handler(req, res) {
   if (res.socket.server.io) {
     console.log('Socket.io server already running');
     res.end();
@@ -19,9 +18,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   io.on('connection', (socket) => {
     console.log('New socket connection:', socket.id);
 
-    let currentRoomId: string | null = null;
+    let currentRoomId = null;
 
-    socket.on('join', (roomId: string) => {
+    socket.on('join', (roomId) => {
       currentRoomId = roomId;
       socket.join(roomId);
       console.log(`Socket ${socket.id} joined room: ${roomId}`);
