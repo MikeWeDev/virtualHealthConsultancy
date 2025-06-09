@@ -30,24 +30,33 @@ export default function handler(req, res) {
   io.on("connection", (socket) => {
     console.log("🟢 New socket connection:", socket.id);
 
-    socket.on("join", (roomId) => {
-      socket.join(roomId);
-      console.log(`👤 Socket ${socket.id} joined room: ${roomId}`);
+   socket.on("join", (roomId) => {
+  socket.join(roomId);
+  const room = io.sockets.adapter.rooms.get(roomId);
 
-      // Notify existing users that someone new joined
-      socket.to(roomId).emit("user-joined");
+  console.log(`👤 Socket ${socket.id} joined room: ${roomId}`);
 
-      // Relay WebRTC signaling messages (offer, answer, candidate)
-      socket.on("webrtc-signal", (data) => {
-        socket.to(roomId).emit("webrtc-signal", data);
-      });
+  // If two users are in the room, notify both to start signaling
+  if (room.size === 2) {
+    io.to(roomId).emit("ready"); // <--- this ensures both users can coordinate
+  }
 
-      // Handle disconnection
-      socket.on("disconnect", () => {
-        console.log(`🔴 Socket ${socket.id} disconnected from room: ${roomId}`);
-        socket.to(roomId).emit("user-left", socket.id);
-      });
-    });
+  socket.on("webrtc-signal", (data) => {
+    socket.to(roomId).emit("webrtc-signal", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`🔴 Socket ${socket.id} disconnected from room: ${roomId}`);
+    socket.to(roomId).emit("user-left", socket.id);
+  });
+
+  socket.on("leave", (roomId) => {
+    socket.leave(roomId);
+    console.log(`👋 Socket ${socket.id} manually left room: ${roomId}`);
+    socket.to(roomId).emit("user-left", socket.id);
+  });
+});
+
 
     // Optional: handle manual leave
     socket.on("leave", (roomId) => {
