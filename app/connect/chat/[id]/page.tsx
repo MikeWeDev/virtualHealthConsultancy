@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 
 interface Message {
   id: string;
-  senderId: string; // used to determine if the message is yours or from someone else
+  senderId: string;
   content?: string;
   file?: {
     name: string;
@@ -18,36 +18,37 @@ const ChatWindow = () => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [socket, setSocket] = useState<any>(null);
-  const [mySocketId, setMySocketId] = useState<string>(''); // store our own socket id
-  const roomId = 'some-room-id'; // adjust or make dynamic if needed
+  const [mySocketId, setMySocketId] = useState<string>('');
+  const roomId = 'some-room-id'; // Make dynamic if needed
 
   useEffect(() => {
-    const socketInstance = io('https://virtualhealthconsultancy-production.up.railway.app/', {
+    const socketInstance = io('https://virtual-health-one.vercel.app', {
       path: '/api/socket',
     });
 
-    // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
-      console.log('Connected to socket server with id:', socketInstance.id);
+      console.log('✅ Connected with ID:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     });
 
-    // Listen for incoming messages (the server is echoing messages via 'signal')
+    socketInstance.on('connect_error', (err) => {
+      console.error('❌ Connection error:', err.message);
+    });
+
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
-        // Prevent duplicate messages by checking senderId and id
         const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
         return exists ? prevMessages : [...prevMessages, incomingMessage];
       });
     });
 
-    // Log join/leave events
     socketInstance.on('user-joined', () => {
-      console.log('A new user joined');
+      console.log('👤 A new user joined');
     });
+
     socketInstance.on('user-left', () => {
-      console.log('A user left');
+      console.log('🚪 A user left');
     });
 
     setSocket(socketInstance);
@@ -57,25 +58,22 @@ const ChatWindow = () => {
     };
   }, [roomId]);
 
-const handleSendMessage = () => {
-  if (newMessage.trim() && socket && socket.connected) {
-    const messageToSend: Message = {
-      id: `${Date.now()}-${crypto.randomUUID()}`,
-      senderId: socket.id,
-      content: newMessage,
-    };
-
-    // Emit message
-    socket.emit('signal', messageToSend);
-    setNewMessage(''); // clear input
-  } else {
-    console.warn("Socket not connected or message empty");
-  }
-};
-
+  const handleSendMessage = () => {
+    if (newMessage.trim() && socket && socket.connected) {
+      const messageToSend: Message = {
+        id: `${Date.now()}-${crypto.randomUUID()}`,
+        senderId: socket.id,
+        content: newMessage,
+      };
+      socket.emit('signal', messageToSend);
+      setNewMessage('');
+    } else {
+      console.warn('⚠️ Socket not connected or message is empty');
+    }
+  };
 
   const handleSendFile = () => {
-    if (!file || !socket) return;
+    if (!file || !socket || !socket.connected) return;
 
     const fileUrl = URL.createObjectURL(file);
 
@@ -105,7 +103,7 @@ const handleSendMessage = () => {
   return (
     <div className="w-full max-w-3xl mx-auto p-0 bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col h-[600px]">
       {/* Top Navbar */}
-      <div className="flex items-center gap-4 p-4 border-b bg-red-500 text-white rounded-t-lg">
+      <div className="flex items-center gap-4 p-4 border-b bg-blue-500 text-white rounded-t-lg">
         <img
           src="https://randomuser.me/api/portraits/men/32.jpg"
           alt="Doctor Avatar"
@@ -121,10 +119,8 @@ const handleSendMessage = () => {
       <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
-            key={msg.id} /* now that id is consistent, we can use it as key */
-            className={`flex ${
-              msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
-            }`}
+            key={msg.id}
+            className={`flex ${msg.senderId === mySocketId ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${

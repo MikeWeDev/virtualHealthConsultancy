@@ -23,7 +23,7 @@ const VideoCall = () => {
     // Prevent multiple connections
     if (socket.current) return;
 
-    socket.current = io('https://virtualhealthconsultancy-production.up.railway.app/', {
+    socket.current = io('https://virtual-health-one.vercel.app', {
       path: '/api/video/socket',
     });
 
