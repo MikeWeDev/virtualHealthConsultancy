@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default function handler(req, res) {
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (res.socket.server.io) {
     console.log('Socket.io server already running');
     res.end();
@@ -18,14 +19,13 @@ export default function handler(req, res) {
   io.on('connection', (socket) => {
     console.log('New socket connection:', socket.id);
 
-    // Store current roomId (if any) for this socket
-    let currentRoomId = null;
+    let currentRoomId: string | null = null;
 
-    socket.on('join', (roomId) => {
+    socket.on('join', (roomId: string) => {
       currentRoomId = roomId;
       socket.join(roomId);
       console.log(`Socket ${socket.id} joined room: ${roomId}`);
-      socket.to(roomId).emit('user-joined');
+      socket.to(roomId).emit('user-joined', { id: socket.id });
     });
 
     socket.on('signal', (data) => {
@@ -39,7 +39,7 @@ export default function handler(req, res) {
     socket.on('disconnect', () => {
       console.log(`Socket ${socket.id} disconnected`);
       if (currentRoomId) {
-        socket.to(currentRoomId).emit('user-left');
+        socket.to(currentRoomId).emit('user-left', { id: socket.id });
       }
     });
   });

@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import { useState, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 interface Message {
   id: string;
@@ -15,11 +15,21 @@ interface Message {
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
+  const [newMessage, setNewMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [socket, setSocket] = useState<any>(null);
-  const [mySocketId, setMySocketId] = useState<string>('');
-  const roomId = 'some-room-id'; // Make dynamic if needed
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [mySocketId, setMySocketId] = useState('');
+  const roomId = 'some-room-id'; // Change this if needed
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when messages update
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     const socketInstance = io('https://virtual-health-one.vercel.app', {
@@ -38,8 +48,9 @@ const ChatWindow = () => {
 
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
-        const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
-        return exists ? prevMessages : [...prevMessages, incomingMessage];
+        // Prevent duplicates by ID
+        if (prevMessages.some((msg) => msg.id === incomingMessage.id)) return prevMessages;
+        return [...prevMessages, incomingMessage];
       });
     });
 
@@ -62,9 +73,13 @@ const ChatWindow = () => {
     if (newMessage.trim() && socket && socket.connected) {
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id,
-        content: newMessage,
+        senderId: mySocketId,
+        content: newMessage.trim(),
       };
+
+      // Optimistically add message locally immediately
+      setMessages((prev) => [...prev, messageToSend]);
+
       socket.emit('signal', messageToSend);
       setNewMessage('');
     } else {
@@ -79,7 +94,7 @@ const ChatWindow = () => {
 
     const fileMessage: Message = {
       id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random().toString(36).substr(2, 9)}`,
-      senderId: socket.id,
+      senderId: mySocketId,
       file: {
         name: file.name,
         url: fileUrl,
@@ -87,10 +102,8 @@ const ChatWindow = () => {
       },
     };
 
-    setMessages((prevMessages) => {
-      const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
-      return exists ? prevMessages : [...prevMessages, fileMessage];
-    });
+    // Optimistically add file message locally
+    setMessages((prev) => [...prev, fileMessage]);
 
     socket.emit('signal', fileMessage);
     setFile(null);
@@ -116,18 +129,20 @@ const ChatWindow = () => {
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex ${msg.senderId === mySocketId ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${
-                msg.senderId === mySocketId
-                  ? 'bg-blue-500 text-white rounded-br-none'
-                  : 'bg-gray-200 text-black rounded-bl-none'
-              }`}
+              className={`group relative max-w-xs p-3 rounded-lg text-sm shadow break-words
+                ${
+                  msg.senderId === mySocketId
+                    ? 'bg-blue-500 text-white rounded-br-none'
+                    : 'bg-gray-200 text-black rounded-bl-none'
+                }`}
+              style={{ wordBreak: 'break-word' }}
             >
               {msg.content && <p>{msg.content}</p>}
 
@@ -161,12 +176,14 @@ const ChatWindow = () => {
                 onClick={() => handleDeleteMessage(msg.id)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md"
                 title="Delete"
+                type="button"
               >
                 ×
               </button>
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Section */}
@@ -178,10 +195,17 @@ const ChatWindow = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
           <button
             onClick={handleSendMessage}
             className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
+            type="button"
           >
             Send
           </button>
@@ -199,6 +223,7 @@ const ChatWindow = () => {
             className={`px-6 py-2 rounded-full text-white transition ${
               file ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'
             }`}
+            type="button"
           >
             Send File
           </button>

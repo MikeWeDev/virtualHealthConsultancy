@@ -19,9 +19,7 @@ const VideoCall = () => {
 
   useEffect(() => {
     if (!roomId) return;
-
-    // Prevent multiple connections
-    if (socket.current) return;
+    if (socket.current) return; // prevent multiple connects
 
     socket.current = io('https://virtual-health-one.vercel.app', {
       path: '/api/video/socket',
@@ -31,6 +29,7 @@ const VideoCall = () => {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
+    // When remote track arrives
     pc.current.ontrack = (event) => {
       const remote = event.streams[0];
       if (!remoteStream) {
@@ -39,6 +38,7 @@ const VideoCall = () => {
       }
     };
 
+    // ICE candidates handler
     pc.current.onicecandidate = (event) => {
       if (event.candidate) {
         socket.current?.emit('webrtc-signal', {
@@ -49,6 +49,7 @@ const VideoCall = () => {
       }
     };
 
+    // Get local media
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
       console.log('🎥 Got local stream');
       localStream.current = stream;
@@ -65,6 +66,16 @@ const VideoCall = () => {
       });
 
       socket.current?.emit('join', roomId);
+    });
+
+    // Socket signaling events
+    socket.current.on('ready', async () => {
+      if (!pc.current) return;
+      // When both users are ready, create offer from one side only
+      console.log('👥 Both users ready, creating offer');
+      const offer = await pc.current.createOffer();
+      await pc.current.setLocalDescription(offer);
+      socket.current?.emit('webrtc-signal', { type: 'offer', offer, roomId });
     });
 
     socket.current.on('webrtc-signal', async (data) => {
@@ -95,21 +106,10 @@ const VideoCall = () => {
       }
     });
 
-    socket.current.on('user-joined', async () => {
-      if (!pc.current) return;
-
-      console.log('👥 New user joined, creating offer');
-      const offer = await pc.current.createOffer();
-      await pc.current.setLocalDescription(offer);
-      socket.current?.emit('webrtc-signal', { type: 'offer', offer, roomId });
-    });
-
     socket.current.on('user-left', () => {
       console.log('👋 Remote user left');
       setRemoteStream(null);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = null;
-      }
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     });
 
     return () => {
@@ -119,8 +119,8 @@ const VideoCall = () => {
       pc.current?.close();
 
       localStream.current?.getTracks().forEach((track) => track.stop());
-      localVideoRef.current && (localVideoRef.current.srcObject = null);
-      remoteVideoRef.current && (remoteVideoRef.current.srcObject = null);
+      if (localVideoRef.current) localVideoRef.current.srcObject = null;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
       setRemoteStream(null);
       socket.current = null;
@@ -128,7 +128,7 @@ const VideoCall = () => {
     };
   }, [roomId]);
 
-  // Attach remote stream once it's ready
+  // Attach remote stream to remote video element
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
