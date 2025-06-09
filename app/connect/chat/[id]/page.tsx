@@ -105,7 +105,7 @@ const handleSendMessage = () => {
   return (
     <div className="w-full max-w-3xl mx-auto p-0 bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col h-[600px]">
       {/* Top Navbar */}
-      <div className="flex items-center gap-4 p-4 border-b bg-blue-500 text-white rounded-t-lg">
+      <div className="flex items-center gap-4 p-4 border-b bg-red-500 text-white rounded-t-lg">
         <img
           src="https://randomuser.me/api/portraits/men/32.jpg"
           alt="Doctor Avatar"
