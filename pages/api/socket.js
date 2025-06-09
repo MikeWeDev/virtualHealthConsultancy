@@ -18,9 +18,9 @@ export default function handler(req, res) {
   io.on('connection', (socket) => {
     console.log('📡 New socket connection:', socket.id);
 
-    let currentRoomId: string | null = null;
+    let currentRoomId = null;
 
-    socket.on('join', (roomId: string) => {
+    socket.on('join', (roomId) => {
       currentRoomId = roomId;
       socket.join(roomId);
       console.log(`🔗 Socket ${socket.id} joined room: ${roomId}`);
