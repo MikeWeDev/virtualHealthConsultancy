@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 
 interface Message {
   id: string;
-  senderId: string; // used to determine if the message is yours or from someone else
+  senderId: string;
   content?: string;
   file?: {
     name: string;
@@ -18,36 +18,37 @@ const ChatWindow = () => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [socket, setSocket] = useState<any>(null);
-  const [mySocketId, setMySocketId] = useState<string>(''); // store our own socket id
-  const roomId = 'some-room-id'; // adjust or make dynamic if needed
+  const [mySocketId, setMySocketId] = useState<string>('');
+  const roomId = 'some-room-id'; // Make dynamic if needed
 
   useEffect(() => {
     const socketInstance = io('https://virtual-health-one.vercel.app', {
       path: '/api/socket',
     });
 
-    // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
-      console.log('Connected to socket server with id:', socketInstance.id);
+      console.log('✅ Connected with ID:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     });
 
-    // Listen for incoming messages (the server is echoing messages via 'signal')
+    socketInstance.on('connect_error', (err) => {
+      console.error('❌ Connection error:', err.message);
+    });
+
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
-        // Prevent duplicate messages by checking senderId and id
         const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
         return exists ? prevMessages : [...prevMessages, incomingMessage];
       });
     });
 
-    // Log join/leave events
     socketInstance.on('user-joined', () => {
-      console.log('A new user joined');
+      console.log('👤 A new user joined');
     });
+
     socketInstance.on('user-left', () => {
-      console.log('A user left');
+      console.log('🚪 A user left');
     });
 
     setSocket(socketInstance);
@@ -58,22 +59,21 @@ const ChatWindow = () => {
   }, [roomId]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && socket) {
-      // Generate a strong unique ID (using Date.now, crypto.randomUUID for extra uniqueness)
+    if (newMessage.trim() && socket && socket.connected) {
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id, // mark this as your message
+        senderId: socket.id,
         content: newMessage,
       };
-
-      // We only emit the message (and let our socket event add it via the received event)
       socket.emit('signal', messageToSend);
       setNewMessage('');
+    } else {
+      console.warn('⚠️ Socket not connected or message is empty');
     }
   };
 
   const handleSendFile = () => {
-    if (!file || !socket) return;
+    if (!file || !socket || !socket.connected) return;
 
     const fileUrl = URL.createObjectURL(file);
 
@@ -119,10 +119,8 @@ const ChatWindow = () => {
       <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
-            key={msg.id} /* now that id is consistent, we can use it as key */
-            className={`flex ${
-              msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
-            }`}
+            key={msg.id}
+            className={`flex ${msg.senderId === mySocketId ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${
@@ -211,6 +209,3 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
-
-
-

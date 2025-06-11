@@ -1,32 +1,17 @@
-'use client'
-import { useState, useEffect } from "react";
+'use client';
+import { useState } from 'react';
+import { useCountdown } from '../../app/context/CountdownContext';
 
 const BookingSection = () => {
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [countdown, setCountdown] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (countdown === null || countdown <= 0) return;
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev === null || prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [countdown]);
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const { countdown, setCountdownTarget, clearCountdown } = useCountdown();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!date || !time) {
-      alert("Please select both date and time.");
+      alert('Please select both date and time.');
       return;
     }
 
@@ -34,22 +19,21 @@ const BookingSection = () => {
     const now = new Date();
 
     const diffInSeconds = Math.floor((selectedDateTime.getTime() - now.getTime()) / 1000);
-
     if (diffInSeconds <= 0) {
-      alert("Selected time is in the past. Please choose a future time.");
+      alert('Selected time is in the past. Please choose a future time.');
       return;
     }
 
-    setCountdown(diffInSeconds);
+    setCountdownTarget(selectedDateTime);
   };
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, '0')}`;
   };
 
   return (
@@ -59,7 +43,9 @@ const BookingSection = () => {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="date" className="block text-gray-600">Select Date</label>
+            <label htmlFor="date" className="block text-gray-600">
+              Select Date
+            </label>
             <input
               type="date"
               id="date"
@@ -70,7 +56,9 @@ const BookingSection = () => {
           </div>
 
           <div>
-            <label htmlFor="time" className="block text-gray-600">Select Time</label>
+            <label htmlFor="time" className="block text-gray-600">
+              Select Time
+            </label>
             <input
               type="time"
               id="time"

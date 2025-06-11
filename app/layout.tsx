@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CountdownProvider } from './context/CountdownContext';
+
 
 export const metadata: Metadata = {
   title: "Virtual health",
@@ -21,7 +23,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        {children}
+        <CountdownProvider >
+                      {children}
+        </CountdownProvider>
       </body>
     </html>
   );

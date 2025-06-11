@@ -1,10 +1,18 @@
-// app/doctor/page.tsx
-
-import React from "react";
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useCountdown } from '../context/CountdownContext';
 
 const DoctorDashboard = () => {
+  const { countdown } = useCountdown();
+
+  // Helper to convert seconds to H:M:S
+  const formatCountdown = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}h ${m}m ${s}s`;
+  };
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       {/* Header Section */}
@@ -14,6 +22,15 @@ const DoctorDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-grow p-6">
+         {countdown !== null && (
+          <div className="mb-6 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-lg p-4 shadow-md flex flex-col items-center">
+            <h2 className="text-lg font-semibold">Upcoming Appointment</h2>
+            <p className="text-2xl font-bold mt-1 animate-pulse">
+              {formatCountdown(countdown)}
+            </p>
+            <p className="text-sm mt-1">Countdown to your next appointment</p>
+          </div>
+        )}
         <div className="flex items-center space-x-6">
           {/* Profile Section */}
           <div className="w-24 h-24">

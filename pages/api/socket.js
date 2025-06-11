@@ -22,12 +22,12 @@ export default function handler(req, res) {
       socket.join(roomId);
       console.log(`Socket ${socket.id} joined room: ${roomId}`);
 
-      // Notify others in the room that a user joined
+      // Let others in the room know a user joined (optional)
       socket.to(roomId).emit("user-joined");
 
-      // Broadcast 'signal' event to everyone in the room, including sender
+      // Broadcast 'signal' to everyone in the room, including sender
       socket.on("signal", (data) => {
-        io.to(roomId).emit("signal", data);
+        io.to(roomId).emit("signal", data); // <== THIS is the key change!
       });
 
       socket.on("disconnect", () => {

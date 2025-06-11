@@ -1,40 +1,18 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+'use client';
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useCountdown } from '../context/CountdownContext';
 
 const Dashboard = () => {
-  const [appointment, setAppointment] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState<string>("");
+  const { countdown } = useCountdown();
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (appointment) {
-      interval = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = appointment.getTime() - now;
-
-        if (distance < 0) {
-          clearInterval(interval);
-          setTimeLeft("Appointment time reached");
-          return;
-        }
-
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [appointment]);
-
-  const handleBook = () => {
-    const futureDate = new Date();
-    futureDate.setMinutes(futureDate.getMinutes() + 90); // Simulate booking 1.5 hrs from now
-    setAppointment(futureDate);
+  // Helper to convert seconds to H:M:S
+  const formatCountdown = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}h ${m}m ${s}s`;
   };
 
   return (
@@ -44,6 +22,18 @@ const Dashboard = () => {
       </header>
 
       <main className="flex-grow p-6">
+
+        {/* Global Countdown Display */}
+        {countdown !== null && (
+          <div className="mb-6 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-lg p-4 shadow-md flex flex-col items-center">
+            <h2 className="text-lg font-semibold">Upcoming Appointment</h2>
+            <p className="text-2xl font-bold mt-1 animate-pulse">
+              {formatCountdown(countdown)}
+            </p>
+            <p className="text-sm mt-1">Countdown to your next appointment</p>
+          </div>
+        )}
+
         <div className="flex items-center space-x-6">
           <div className="w-24 h-24">
             <Image
@@ -60,38 +50,22 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Appointment Section */}
+        {/* Booking Status Section */}
         <section className="mt-8">
           <h3 className="text-lg font-semibold text-gray-800">Your Appointments</h3>
           <div className="bg-white p-4 mt-4 rounded-lg shadow-md">
-            {appointment ? (
-              <div>
-                <h4 className="text-md font-semibold text-gray-600">Upcoming Appointment</h4>
-                <p className="text-gray-700 mt-2">
-                  Appointment at: {appointment.toLocaleString()}
-                </p>
-                <p className="text-blue-600 font-semibold mt-1">Countdown: {timeLeft}</p>
-              </div>
+            {countdown !== null ? (
+              <p className="text-blue-600 font-semibold">
+                You have an upcoming appointment.
+              </p>
             ) : (
               <div className="text-gray-600">No appointments booked.</div>
             )}
           </div>
         </section>
 
-        {/* Booking Button */}
-        {!appointment && (
-          <section className="mt-6">
-            <button
-              onClick={handleBook}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-300"
-            >
-              Book New Appointment
-            </button>
-          </section>
-        )}
-
-        {/* Conditional Connect Options */}
-        {appointment && (
+        {/* Connect Options */}
+        {countdown !== null && (
           <section className="mt-10 space-y-8">
             <div className="bg-blue-50 rounded-lg shadow-lg p-4">
               <h2 className="text-xl font-semibold text-blue-900 mb-3 text-center">MESSAGE</h2>
