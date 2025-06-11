@@ -12,11 +12,11 @@ export default function RegisterPage() {
   const [status, setStatus] = useState('');
   const router = useRouter();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage('');
     setStatus('loading');
@@ -132,10 +132,8 @@ export default function RegisterPage() {
           >
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link href="/">
-                <a className="text-green-600 font-semibold hover:underline">
-                  Login
-                </a>
+              <Link href="/" className="text-green-600 font-semibold hover:underline">
+                Login
               </Link>
             </p>
           </motion.div>
