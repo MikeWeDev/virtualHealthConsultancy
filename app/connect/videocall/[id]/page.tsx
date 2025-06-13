@@ -21,7 +21,7 @@ const VideoCall = () => {
     if (!roomId) return;
 
     // Connect to backend socket server
-    socket.current = io('/', {
+    socket.current = io('/https://virtual-health-one.vercel.app/', {
       path: '/api/video/socket',
     });
 
