@@ -16,33 +16,32 @@ const VideoCall = () => {
   const socket = useRef<Socket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
+  const isInitiator = useRef<boolean>(false);
 
   useEffect(() => {
     if (!roomId) return;
 
     // Connect to backend socket server
-    socket.current = io('/https://virtual-health-one.vercel.app/', {
+    socket.current = io('https://virtual-health-one.vercel.app', {
       path: '/api/video/socket',
     });
 
-    // Initialize PeerConnection
+    // Setup PeerConnection
     pc.current = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
-    // Handle remote track
+    // Handle incoming tracks
     pc.current.ontrack = (event) => {
       const [remote] = event.streams;
-      if (remote) {
+      if (remote && remoteVideoRef.current) {
         console.log('📡 Received remote stream');
         setRemoteStream(remote);
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remote;
-        }
+        remoteVideoRef.current.srcObject = remote;
       }
     };
 
-    // Handle ICE candidates
+    // Send ICE candidates to peer
     pc.current.onicecandidate = (event) => {
       if (event.candidate) {
         socket.current?.emit('webrtc-signal', {
@@ -53,7 +52,7 @@ const VideoCall = () => {
       }
     };
 
-    // Get local media
+    // Access local media
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
       localStream.current = stream;
       if (localVideoRef.current) {
@@ -64,10 +63,17 @@ const VideoCall = () => {
         pc.current?.addTrack(track, stream);
       });
 
+      // Join room after getting media
       socket.current?.emit('join', roomId);
     });
 
-    // Handle signaling messages
+    // Initiator info from server
+    socket.current.on('you-are-initiator', () => {
+      console.log('🧭 You are the initiator');
+      isInitiator.current = true;
+    });
+
+    // Handle WebRTC signaling
     socket.current.on('webrtc-signal', async (data) => {
       if (!pc.current) return;
 
@@ -92,27 +98,28 @@ const VideoCall = () => {
             break;
         }
       } catch (err) {
-        console.error('⚠️ WebRTC signal error:', err);
+        console.error('⚠️ WebRTC error:', err);
       }
     });
 
-    // Handle user joining
+    // Handle new user
     socket.current.on('user-joined', async () => {
+      if (!pc.current || !isInitiator.current) return;
+
       console.log('👥 User joined, sending offer');
-      if (!pc.current) return;
       const offer = await pc.current.createOffer();
       await pc.current.setLocalDescription(offer);
       socket.current?.emit('webrtc-signal', { type: 'offer', offer, roomId });
     });
 
-    // Handle user leaving
+    // Handle remote user leaving
     socket.current.on('user-left', () => {
       console.log('👋 Remote user left');
       setRemoteStream(null);
       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     });
 
-    // Cleanup
+    // Cleanup on unmount
     return () => {
       console.log('🧹 Cleaning up');
       socket.current?.emit('leave', roomId);
@@ -122,7 +129,7 @@ const VideoCall = () => {
     };
   }, [roomId]);
 
-  // Ensure remote stream updates video
+  // Update video when remote stream changes
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
@@ -179,7 +186,7 @@ const VideoCall = () => {
       <div className="mt-8">
         <button
           onClick={endCall}
-          className="px-6 py-3 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
+          className="px-6 py-3 bg-green-500 text-white rounded-full shadow hover:bg-red-600"
         >
           End Call
         </button>

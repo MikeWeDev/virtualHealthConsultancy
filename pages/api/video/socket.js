@@ -6,7 +6,7 @@ export const config = {
   },
 };
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const server = res.socket?.server;
 
   if (!server || !res.socket) {
@@ -35,12 +35,23 @@ export default function handler(req, res) {
   io.on('connection', (socket) => {
     console.log('🟢 Socket connected:', socket.id);
 
-    socket.on('join', (roomId) => {
+    socket.on('join', async (roomId) => {
       console.log(`👤 ${socket.id} joined room: ${roomId}`);
       socket.data.roomId = roomId;
       socket.join(roomId);
-      socket.to(roomId).emit('user-joined');
 
+      // 👇 Count how many sockets are currently in the room
+      const clients = await io.in(roomId).allSockets();
+
+      if (clients.size === 1) {
+        console.log(`🧭 ${socket.id} is the initiator`);
+        socket.emit('you-are-initiator');
+      } else {
+        console.log(`📨 Notifying other clients that ${socket.id} joined`);
+        socket.to(roomId).emit('user-joined');
+      }
+
+      // WebRTC signal relay
       socket.on('webrtc-signal', (data) => {
         socket.to(roomId).emit('webrtc-signal', data);
       });
