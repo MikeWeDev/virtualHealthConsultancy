@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useParams } from 'next/navigation';
@@ -19,115 +20,109 @@ const VideoCall = () => {
   useEffect(() => {
     if (!roomId) return;
 
-    socket.current = io('https://virtual-health-one.vercel.app', {
-      path: "/api/video/socket",
+    // Connect to backend socket server
+    socket.current = io('/', {
+      path: '/api/video/socket',
     });
 
+    // Initialize PeerConnection
     pc.current = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
-    // When we receive a remote track
+    // Handle remote track
     pc.current.ontrack = (event) => {
-      console.log("📡 Received remote track:", event.streams);
-      const remote = event.streams[0];
-      setRemoteStream(remote);
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remote;
-        remoteVideoRef.current.onloadedmetadata = () => {
-          remoteVideoRef.current?.play().catch(err => console.warn("Play error:", err));
-        };
+      const [remote] = event.streams;
+      if (remote) {
+        console.log('📡 Received remote stream');
+        setRemoteStream(remote);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remote;
+        }
       }
     };
 
-    // ICE Candidate
+    // Handle ICE candidates
     pc.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.current?.emit("webrtc-signal", {
-          type: "candidate",
+        socket.current?.emit('webrtc-signal', {
+          type: 'candidate',
           candidate: event.candidate,
           roomId,
         });
       }
     };
 
-    // Local media
+    // Get local media
     navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-      console.log("🎥 Got local stream");
       localStream.current = stream;
-
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
-        localVideoRef.current.onloadedmetadata = () => {
-          localVideoRef.current?.play().catch(err => console.warn("Local play error:", err));
-        };
       }
 
       stream.getTracks().forEach((track) => {
-        console.log("🔊 Adding track:", track);
         pc.current?.addTrack(track, stream);
       });
 
-      socket.current?.emit("join", roomId);
+      socket.current?.emit('join', roomId);
     });
 
-    // Listen to signaling
-    socket.current.on("webrtc-signal", async (data) => {
+    // Handle signaling messages
+    socket.current.on('webrtc-signal', async (data) => {
       if (!pc.current) return;
 
-      switch (data.type) {
-        case "offer":
-          console.log("📨 Received offer");
-          await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
-          const answer = await pc.current.createAnswer();
-          await pc.current.setLocalDescription(answer);
-          socket.current?.emit("webrtc-signal", { type: "answer", answer, roomId });
-          break;
+      try {
+        switch (data.type) {
+          case 'offer':
+            console.log('📨 Received offer');
+            await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pc.current.createAnswer();
+            await pc.current.setLocalDescription(answer);
+            socket.current?.emit('webrtc-signal', { type: 'answer', answer, roomId });
+            break;
 
-        case "answer":
-          console.log("📨 Received answer");
-          await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-          break;
+          case 'answer':
+            console.log('📨 Received answer');
+            await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+            break;
 
-        case "candidate":
-          console.log("📨 Received candidate");
-          try {
+          case 'candidate':
+            console.log('📨 Received candidate');
             await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-          } catch (err) {
-            console.error("Error adding received ice candidate", err);
-          }
-          break;
+            break;
+        }
+      } catch (err) {
+        console.error('⚠️ WebRTC signal error:', err);
       }
     });
 
-    // When another user joins
-    socket.current.on("user-joined", async () => {
+    // Handle user joining
+    socket.current.on('user-joined', async () => {
+      console.log('👥 User joined, sending offer');
       if (!pc.current) return;
-
-      console.log("👥 New user joined, creating offer");
       const offer = await pc.current.createOffer();
       await pc.current.setLocalDescription(offer);
-      socket.current?.emit("webrtc-signal", { type: "offer", offer, roomId });
+      socket.current?.emit('webrtc-signal', { type: 'offer', offer, roomId });
     });
 
-    socket.current.on("user-left", () => {
-      console.log("👋 Remote user left");
+    // Handle user leaving
+    socket.current.on('user-left', () => {
+      console.log('👋 Remote user left');
       setRemoteStream(null);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = null;
-      }
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     });
 
+    // Cleanup
     return () => {
-      console.log("🧹 Cleaning up connection");
-      socket.current?.emit("leave", roomId);
+      console.log('🧹 Cleaning up');
+      socket.current?.emit('leave', roomId);
       socket.current?.disconnect();
       pc.current?.close();
+      localStream.current?.getTracks().forEach((t) => t.stop());
     };
   }, [roomId]);
 
-  // Ensure video ref updates when state changes
+  // Ensure remote stream updates video
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
@@ -135,10 +130,11 @@ const VideoCall = () => {
   }, [remoteStream]);
 
   const endCall = () => {
-    console.log("📞 Ending call");
-    socket.current?.emit("leave", roomId);
+    console.log('📞 Ending call');
+    socket.current?.emit('leave', roomId);
     socket.current?.disconnect();
     pc.current?.close();
+    localStream.current?.getTracks().forEach((t) => t.stop());
 
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
@@ -152,33 +148,32 @@ const VideoCall = () => {
       </header>
 
       <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 px-4">
-                        <div className="flex-1 flex flex-col items-center">
-                          <h2 className="text-xl font-semibold mb-4 text-gray-700">Your Video</h2>
-                          <video
-                            ref={localVideoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-64 max-w-md object-cover rounded-lg shadow"
-                          />
-                        </div>
+        <div className="flex-1 flex flex-col items-center">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Your Video</h2>
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-64 max-w-md object-cover rounded-lg shadow"
+          />
+        </div>
 
-                        <div className="flex-1 flex flex-col items-center">
-                          <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
-                          {remoteStream ? (
-                            <video
-                              ref={remoteVideoRef}
-                              autoPlay
-                              playsInline
-                              className="w-full h-64 max-w-md object-cover rounded-lg shadow"
-                            />
-                          ) : (
-                            <div className="w-full h-64 max-w-md flex items-center justify-center bg-gray-200 rounded-lg shadow">
-                              <span className="text-gray-500">Waiting for remote user...</span>
-                            </div>
-                          )}
-                        </div>
-
+        <div className="flex-1 flex flex-col items-center">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Remote Video</h2>
+          {remoteStream ? (
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="w-full h-64 max-w-md object-cover rounded-lg shadow"
+            />
+          ) : (
+            <div className="w-full h-64 max-w-md flex items-center justify-center bg-gray-200 rounded-lg shadow">
+              <span className="text-gray-500">Waiting for remote user...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-8">
@@ -194,10 +189,3 @@ const VideoCall = () => {
 };
 
 export default VideoCall;
-
-
-
-
-
-
-

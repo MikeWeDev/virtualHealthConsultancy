@@ -7,57 +7,53 @@ export const config = {
 };
 
 export default function handler(req, res) {
-  const socket = res.socket;
+  const server = res.socket?.server;
 
-  if (!socket) {
-    res.status(500).send("Socket is not available");
+  if (!server || !res.socket) {
+    res.status(500).end('Socket not available');
     return;
   }
 
-  if (socket.server.io) {
-    console.log("✅ Socket.io server already running");
+  if (server.io) {
+    console.log('✅ Socket.io server already running');
     res.end();
     return;
   }
 
-  console.log("🚀 Starting new Socket.io server...");
+  console.log('🚀 Starting new Socket.io server...');
 
-  const io = new Server(socket.server, {
-    path: "/api/video/socket",
-    addTrailingSlash: false,
+  const io = new Server(server, {
+    path: '/api/video/socket',
     cors: {
-      origin: "*", // Change to specific domain in production
-      methods: ["GET", "POST"]
-    }
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
   });
 
-  socket.server.io = io;
+  server.io = io;
 
-  io.on("connection", (socket) => {
-    console.log("🟢 New socket connection:", socket.id);
+  io.on('connection', (socket) => {
+    console.log('🟢 Socket connected:', socket.id);
 
-    socket.on("join", (roomId) => {
-      socket.data.roomId = roomId; // Store room ID
+    socket.on('join', (roomId) => {
+      console.log(`👤 ${socket.id} joined room: ${roomId}`);
+      socket.data.roomId = roomId;
       socket.join(roomId);
-      console.log(`👤 Socket ${socket.id} joined room: ${roomId}`);
-      socket.to(roomId).emit("user-joined");
+      socket.to(roomId).emit('user-joined');
 
-      socket.on("webrtc-signal", (data) => {
-        socket.to(roomId).emit("webrtc-signal", data);
+      socket.on('webrtc-signal', (data) => {
+        socket.to(roomId).emit('webrtc-signal', data);
       });
 
-      socket.on("leave", (roomId) => {
+      socket.on('leave', () => {
+        console.log(`👋 ${socket.id} left room: ${roomId}`);
         socket.leave(roomId);
-        console.log(`👋 Socket ${socket.id} manually left room: ${roomId}`);
-        socket.to(roomId).emit("user-left", socket.id);
+        socket.to(roomId).emit('user-left');
       });
 
-      socket.on("disconnect", () => {
-        const roomId = socket.data.roomId;
-        if (roomId) {
-          console.log(`🔴 Socket ${socket.id} disconnected from room: ${roomId}`);
-          socket.to(roomId).emit("user-left", socket.id);
-        }
+      socket.on('disconnect', () => {
+        console.log(`🔴 ${socket.id} disconnected from room: ${roomId}`);
+        socket.to(roomId).emit('user-left');
       });
     });
   });
