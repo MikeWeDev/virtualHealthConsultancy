@@ -35,6 +35,7 @@ const ChatWindow = () => {
     });
 
     socketInstance.on('signal', (incomingMessage: Message) => {
+      console.log('Received message:', incomingMessage);
       setMessages(prevMessages => {
         // Check if message already exists (by ID)
         if (prevMessages.some(msg => msg.id === incomingMessage.id)) {
@@ -44,12 +45,12 @@ const ChatWindow = () => {
       });
     });
 
-    socketInstance.on('user-joined', () => {
-      console.log('A new user joined');
+    socketInstance.on('user-joined', (userId: string) => {
+      console.log(`User joined: ${userId}`);
     });
 
-    socketInstance.on('user-left', () => {
-      console.log('A user left');
+    socketInstance.on('user-left', (userId: string) => {
+      console.log(`User left: ${userId}`);
     });
 
     socketInstance.on('connect_error', (err) => {
@@ -76,7 +77,7 @@ const ChatWindow = () => {
       setNewMessage('');
 
       // Send to server
-      socket.emit('signal', messageToSend);
+      socket.emit('signal', { ...messageToSend, roomId });
     }
   };
 
@@ -99,8 +100,8 @@ const ChatWindow = () => {
       setMessages(prev => [...prev, fileMessage]);
       setFile(null);
 
-      // Send to server
-      socket.emit('signal', fileMessage);
+      // Send to server with roomId
+      socket.emit('signal', { ...fileMessage, roomId });
     };
     reader.readAsDataURL(file);
   };
@@ -140,6 +141,12 @@ const ChatWindow = () => {
                   : 'bg-gray-200 text-black rounded-bl-none'
               }`}
             >
+              {msg.senderId !== mySocketId && (
+                <div className="text-xs font-semibold mb-1">
+                  {msg.senderId === socket?.id ? 'You' : `User ${msg.senderId.slice(0, 4)}`}
+                </div>
+              )}
+              
               {msg.content && <p className="break-words">{msg.content}</p>}
 
               {msg.file && (

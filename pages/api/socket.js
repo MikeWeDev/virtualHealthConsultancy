@@ -23,18 +23,44 @@ export default function handler(req, res) {
 
   io.on("connection", (socket) => {
     console.log(`New connection: ${socket.id}`);
+    
+    let currentRoom = null;
 
     socket.on("join", (roomId) => {
+      // Leave previous room if any
+      if (currentRoom) {
+        socket.leave(currentRoom);
+        socket.to(currentRoom).emit("user-left", socket.id);
+      }
+      
+      // Join new room
       socket.join(roomId);
+      currentRoom = roomId;
       console.log(`Socket ${socket.id} joined ${roomId}`);
       
-      socket.on("signal", (msg) => {
-        io.to(roomId).emit("signal", msg);
-      });
+      // Notify others in the room
+      socket.to(roomId).emit("user-joined", socket.id);
+    });
+
+    socket.on("signal", (msg) => {
+      console.log(`Received signal from ${socket.id} in room ${currentRoom}:`, msg.id);
+      
+      if (currentRoom) {
+        // Broadcast to everyone in the room except the sender
+        socket.to(currentRoom).emit("signal", msg);
+        
+        // Also send to sender (for consistency)
+        socket.emit("signal", msg);
+      } else {
+        console.error(`Socket ${socket.id} sent message without joining room`);
+      }
     });
 
     socket.on("disconnect", () => {
       console.log(`Disconnected: ${socket.id}`);
+      if (currentRoom) {
+        socket.to(currentRoom).emit("user-left", socket.id);
+      }
     });
   });
 
