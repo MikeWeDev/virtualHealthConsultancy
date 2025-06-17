@@ -79,7 +79,7 @@ const ChatWindow = () => {
 
     const messageToSend: Message = {
       id: `${Date.now()}-${crypto.randomUUID()}`,
-      senderId: socket.id,
+      senderId: socket.id ?? '',
       content: newMessage.trim(),
       roomId,
     };
@@ -108,7 +108,7 @@ const ChatWindow = () => {
       id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random()
         .toString(36)
         .substring(2, 11)}`,
-      senderId: socket.id,
+       senderId: socket.id ?? '',
       file: {
         name: file.name,
         url: fileUrl,
