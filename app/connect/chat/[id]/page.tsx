@@ -22,7 +22,7 @@ const ChatWindow = () => {
   const roomId = 'some-room-id';
 
   useEffect(() => {
-    const socketInstance = io(window.location.origin, {
+    const socketInstance = io('https://virtual-health-one.vercel.app/', {
       path: '/api/socket.js',
       autoConnect: true,
       reconnection: true,
