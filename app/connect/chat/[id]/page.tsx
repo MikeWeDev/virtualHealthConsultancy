@@ -9,7 +9,7 @@ interface Message {
   file?: {
     name: string;
     type: string;
-    data: string; // Changed to base64 data
+    data: string;
   };
 }
 
@@ -22,9 +22,8 @@ const ChatWindow = () => {
   const roomId = 'some-room-id';
 
   useEffect(() => {
-    // Use current origin instead of hardcoded URL
     const socketInstance = io(window.location.origin, {
-      path: '/api/socket_io', // Updated path
+      path: '/api/socket_io',
       autoConnect: true,
       reconnection: true,
     });
@@ -36,9 +35,12 @@ const ChatWindow = () => {
     });
 
     socketInstance.on('signal', (incomingMessage: Message) => {
-      setMessages((prevMessages) => {
-        const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
-        return exists ? prevMessages : [...prevMessages, incomingMessage];
+      setMessages(prevMessages => {
+        // Check if message already exists (by ID)
+        if (prevMessages.some(msg => msg.id === incomingMessage.id)) {
+          return prevMessages;
+        }
+        return [...prevMessages, incomingMessage];
       });
     });
 
@@ -69,8 +71,12 @@ const ChatWindow = () => {
         content: newMessage,
       };
 
-      socket.emit('signal', messageToSend);
+      // Add message immediately to UI (optimistic update)
+      setMessages(prev => [...prev, messageToSend]);
       setNewMessage('');
+
+      // Send to server
+      socket.emit('signal', messageToSend);
     }
   };
 
@@ -89,14 +95,18 @@ const ChatWindow = () => {
         },
       };
 
-      socket.emit('signal', fileMessage);
+      // Add file message immediately to UI
+      setMessages(prev => [...prev, fileMessage]);
       setFile(null);
+
+      // Send to server
+      socket.emit('signal', fileMessage);
     };
     reader.readAsDataURL(file);
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
+    setMessages(prev => prev.filter(msg => msg.id !== id));
   };
 
   return (
@@ -115,7 +125,7 @@ const ChatWindow = () => {
       </div>
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -130,7 +140,7 @@ const ChatWindow = () => {
                   : 'bg-gray-200 text-black rounded-bl-none'
               }`}
             >
-              {msg.content && <p>{msg.content}</p>}
+              {msg.content && <p className="break-words">{msg.content}</p>}
 
               {msg.file && (
                 <div className="flex flex-col gap-1 mt-2">
@@ -138,13 +148,13 @@ const ChatWindow = () => {
                     <img
                       src={msg.file.data}
                       alt={msg.file.name}
-                      className="w-40 h-40 object-cover rounded-md"
+                      className="max-w-[160px] max-h-[160px] object-cover rounded-md"
                     />
                   ) : (
                     <a
                       href={msg.file.data}
                       download={msg.file.name}
-                      className="text-blue-500 underline"
+                      className="text-blue-500 underline hover:text-blue-700"
                     >
                       Download {msg.file.name}
                     </a>
@@ -154,7 +164,7 @@ const ChatWindow = () => {
 
               <button
                 onClick={() => handleDeleteMessage(msg.id)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md"
+                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md hover:bg-red-600 transition"
                 title="Delete"
               >
                 ×
@@ -189,6 +199,17 @@ const ChatWindow = () => {
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
           />
+          {file && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm truncate max-w-[100px]">{file.name}</span>
+              <button
+                onClick={() => setFile(null)}
+                className="text-red-500 hover:text-red-700"
+              >
+                ×
+              </button>
+            </div>
+          )}
           <button
             onClick={handleSendFile}
             disabled={!file}
