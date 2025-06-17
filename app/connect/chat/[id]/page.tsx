@@ -11,6 +11,7 @@ interface Message {
     url: string;
     type: string;
   };
+  roomId?: string;  // Added to keep room info
 }
 
 const ChatWindow = () => {
@@ -19,7 +20,7 @@ const ChatWindow = () => {
   const [file, setFile] = useState<File | null>(null);
   const [socket, setSocket] = useState<any>(null);
   const [mySocketId, setMySocketId] = useState<string>('');
-  const roomId = 'some-room-id'; // Make dynamic if needed
+  const roomId = 'some-room-id'; // Replace with dynamic room id if needed
 
   useEffect(() => {
     const socketInstance = io('https://virtual-health-one.vercel.app', {
@@ -64,6 +65,7 @@ const ChatWindow = () => {
         id: `${Date.now()}-${crypto.randomUUID()}`,
         senderId: socket.id,
         content: newMessage,
+        roomId, // Pass the roomId for backend routing
       };
       socket.emit('signal', messageToSend);
       setNewMessage('');
@@ -78,13 +80,16 @@ const ChatWindow = () => {
     const fileUrl = URL.createObjectURL(file);
 
     const fileMessage: Message = {
-      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
       senderId: socket.id,
       file: {
         name: file.name,
         url: fileUrl,
         type: file.type,
       },
+      roomId, // Pass the roomId here too
     };
 
     setMessages((prevMessages) => {
