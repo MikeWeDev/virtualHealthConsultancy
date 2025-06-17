@@ -1,6 +1,7 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 interface Message {
   id: string;
@@ -11,64 +12,63 @@ interface Message {
     url: string;
     type: string;
   };
-  roomId?: string; // Added to keep room info
+  roomId?: string;
 }
+
+const roomId = 'some-room-id'; // ideally dynamic or from props/context
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState<string>('');
+  const [newMessage, setNewMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [socket, setSocket] = useState<any>(null);
-  const [mySocketId, setMySocketId] = useState<string>('');
-  const roomId = 'some-room-id'; // Replace with dynamic room id if needed
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [mySocketId, setMySocketId] = useState('');
 
   useEffect(() => {
-    const socketInstance = io('https://virtual-health-one.vercel.app', {
-      path: '/api/socket',
-    });
-
-    socketInstance.on('connect', () => {
-      console.log('✅ Connected with ID:', socketInstance.id);
-      setMySocketId(socketInstance.id ?? '');
-      socketInstance.emit('join', roomId);
-    });
-
-    socketInstance.on('connect_error', (err) => {
-      console.error('❌ Connection error:', err.message);
-    });
-
-    socketInstance.on('signal', (incomingMessage: Message) => {
-      setMessages((prevMessages) => {
-        const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
-        if (exists) return prevMessages;
-        return [...prevMessages, incomingMessage];
+    // Wake up socket server by fetching once
+    fetch('/api/socket').finally(() => {
+      const socketInstance = io({
+        path: '/api/socket',
       });
+
+      socketInstance.on('connect', () => {
+        console.log('✅ Connected with ID:', socketInstance.id);
+        setMySocketId(socketInstance.id ?? '');
+        socketInstance.emit('join', roomId);
+      });
+
+      socketInstance.on('connect_error', (err) => {
+        console.error('❌ Connection error:', err.message);
+      });
+
+      socketInstance.on('signal', (incomingMessage: Message) => {
+        setMessages((prev) => {
+          if (prev.some((msg) => msg.id === incomingMessage.id)) return prev;
+          return [...prev, incomingMessage];
+        });
+      });
+
+      socketInstance.on('user-joined', (userId: string) => {
+        console.log(`👤 User joined: ${userId}`);
+      });
+
+      socketInstance.on('user-left', (userId: string) => {
+        console.log(`🚪 User left: ${userId}`);
+      });
+
+      setSocket(socketInstance);
+
+      return () => {
+        socketInstance.disconnect();
+        console.log('Socket disconnected');
+      };
     });
-
-    socketInstance.on('user-joined', () => {
-      console.log('👤 A new user joined');
-    });
-
-    socketInstance.on('user-left', () => {
-      console.log('🚪 A user left');
-    });
-
-    setSocket(socketInstance);
-
-    return () => {
-      socketInstance.disconnect();
-      console.log('Socket disconnected');
-    };
-  }, [roomId]);
+  }, []);
 
   const handleSendMessage = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
 
-    if (!socket) {
-      console.warn('Socket not initialized');
-      return;
-    }
-    if (!socket.connected) {
+    if (!socket || !socket.connected) {
       console.warn('Socket not connected');
       return;
     }
@@ -81,11 +81,12 @@ const ChatWindow = () => {
       id: `${Date.now()}-${crypto.randomUUID()}`,
       senderId: socket.id,
       content: newMessage.trim(),
-      roomId, // Pass the roomId for backend routing
+      roomId,
     };
 
     console.log('📝 Sending message:', messageToSend);
     socket.emit('signal', messageToSend);
+    setMessages((prev) => [...prev, messageToSend]);
     setNewMessage('');
   };
 
@@ -96,11 +97,7 @@ const ChatWindow = () => {
       console.warn('No file selected');
       return;
     }
-    if (!socket) {
-      console.warn('Socket not initialized');
-      return;
-    }
-    if (!socket.connected) {
+    if (!socket || !socket.connected) {
       console.warn('Socket not connected');
       return;
     }
@@ -110,29 +107,24 @@ const ChatWindow = () => {
     const fileMessage: Message = {
       id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random()
         .toString(36)
-        .substr(2, 9)}`,
+        .substring(2, 11)}`,
       senderId: socket.id,
       file: {
         name: file.name,
         url: fileUrl,
         type: file.type,
       },
-      roomId, // Pass the roomId here too
+      roomId,
     };
 
-    setMessages((prevMessages) => {
-      const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
-      if (exists) return prevMessages;
-      return [...prevMessages, fileMessage];
-    });
-
+    setMessages((prev) => [...prev, fileMessage]);
     console.log('📤 Sending file message:', fileMessage);
     socket.emit('signal', fileMessage);
     setFile(null);
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
   };
 
   return (

@@ -1,46 +1,56 @@
-import { Server } from "socket.io";
+// /pages/api/socket.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Server as SocketIOServer } from 'socket.io';
+import { Server as NetServer } from 'http';
 
-export default function handler(req, res) {
-  if (res.socket.server.io) {
-    console.log("Socket.io server already running");
-    res.end();
-    return;
-  }
+const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
+  if (!res.socket.server.io) {
+    console.log('Initializing Socket.IO server...');
 
-  console.log("Starting new Socket.io server...");
+    const httpServer = res.socket.server as unknown as NetServer;
+    const io = new SocketIOServer(httpServer, {
+      path: '/api/socket',  // important: matches client path
+      cors: {
+        origin: '*',  // restrict in production
+        methods: ['GET', 'POST'],
+      },
+    });
 
-  const io = new Server(res.socket.server, {
-    path: "/api/socket",
-  });
+    io.on('connection', (socket) => {
+      console.log('New client connected:', socket.id);
 
-  res.socket.server.io = io;
-
-  io.on("connection", (socket) => {
-    console.log("New socket connection:", socket.id);
-
-    socket.on("join", (roomId) => {
-      socket.join(roomId);
-      console.log(`Socket ${socket.id} joined room: ${roomId}`);
-
-      // Notify others in the room
-      socket.to(roomId).emit("user-joined");
-
-      // Listen for 'signal' events and broadcast them to the room
-      socket.on("signal", (data) => {
-        const { roomId: dataRoomId } = data;
-        if (!dataRoomId) {
-          console.warn("signal received without roomId");
-          return;
-        }
-        io.to(dataRoomId).emit("signal", data);
+      socket.on('join', (roomId: string) => {
+        console.log(`Socket ${socket.id} joining room: ${roomId}`);
+        socket.join(roomId);
+        socket.to(roomId).emit('user-joined', socket.id);
       });
 
-      socket.on("disconnect", () => {
-        console.log(`Socket ${socket.id} disconnected from room: ${roomId}`);
-        socket.to(roomId).emit("user-left");
+      socket.on('signal', (message) => {
+        // Broadcast to everyone in the same room except sender
+        if (message.roomId) {
+          socket.to(message.roomId).emit('signal', message);
+        }
+      });
+
+      socket.on('disconnecting', () => {
+        // Emit user-left for all rooms this socket was in
+        socket.rooms.forEach((room) => {
+          if (room !== socket.id) { // exclude personal socket room
+            socket.to(room).emit('user-left', socket.id);
+          }
+        });
+      });
+
+      socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
       });
     });
-  });
 
+    res.socket.server.io = io;
+  } else {
+    console.log('Socket.IO server already initialized');
+  }
   res.end();
-}
+};
+
+export default SocketHandler;
