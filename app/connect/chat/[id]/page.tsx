@@ -17,7 +17,12 @@ interface Message {
 }
 
 const ChatWindow = () => {
-  const { id: roomId } = useParams(); // get dynamic roomId from URL param
+const params = useParams();
+
+const roomId = 
+  !params || !params.id || Array.isArray(params.id) 
+    ? '' // or handle invalid case as you want
+    : params.id;
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
