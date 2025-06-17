@@ -1,3 +1,4 @@
+// pages/api/socket.js
 import { Server } from "socket.io";
 
 export default function handler(req, res) {
@@ -10,30 +11,30 @@ export default function handler(req, res) {
   console.log("Starting new Socket.io server...");
 
   const io = new Server(res.socket.server, {
-    path: "/api/socket",
+    path: "/api/socket_io",
+    addTrailingSlash: false,
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    },
   });
 
   res.socket.server.io = io;
 
   io.on("connection", (socket) => {
-    console.log("New socket connection:", socket.id);
+    console.log(`New connection: ${socket.id}`);
 
     socket.on("join", (roomId) => {
       socket.join(roomId);
-      console.log(`Socket ${socket.id} joined room: ${roomId}`);
-
-      // Let others in the room know a user joined (optional)
-      socket.to(roomId).emit("user-joined");
-
-      // Broadcast 'signal' to everyone in the room, including sender
-      socket.on("signal", (data) => {
-        io.to(roomId).emit("signal", data); // <== THIS is the key change!
+      console.log(`Socket ${socket.id} joined ${roomId}`);
+      
+      socket.on("signal", (msg) => {
+        io.to(roomId).emit("signal", msg);
       });
+    });
 
-      socket.on("disconnect", () => {
-        console.log(`Socket ${socket.id} left room: ${roomId}`);
-        socket.to(roomId).emit("user-left");
-      });
+    socket.on("disconnect", () => {
+      console.log(`Disconnected: ${socket.id}`);
     });
   });
 

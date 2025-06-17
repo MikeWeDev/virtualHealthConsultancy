@@ -4,12 +4,12 @@ import { io } from 'socket.io-client';
 
 interface Message {
   id: string;
-  senderId: string; // used to determine if the message is yours or from someone else
+  senderId: string;
   content?: string;
   file?: {
     name: string;
-    url: string;
     type: string;
+    data: string; // Changed to base64 data
   };
 }
 
@@ -18,36 +18,40 @@ const ChatWindow = () => {
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [socket, setSocket] = useState<any>(null);
-  const [mySocketId, setMySocketId] = useState<string>(''); // store our own socket id
-  const roomId = 'some-room-id'; // adjust or make dynamic if needed
+  const [mySocketId, setMySocketId] = useState<string>('');
+  const roomId = 'some-room-id';
 
   useEffect(() => {
-    const socketInstance = io('https://virtual-health-one.vercel.app', {
-      path: '/api/socket',
+    // Use current origin instead of hardcoded URL
+    const socketInstance = io(window.location.origin, {
+      path: '/api/socket_io', // Updated path
+      autoConnect: true,
+      reconnection: true,
     });
 
-    // On connect, save your socket id and join the room
     socketInstance.on('connect', () => {
-      console.log('Connected to socket server with id:', socketInstance.id);
+      console.log('Connected:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     });
 
-    // Listen for incoming messages (the server is echoing messages via 'signal')
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
-        // Prevent duplicate messages by checking senderId and id
         const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
         return exists ? prevMessages : [...prevMessages, incomingMessage];
       });
     });
 
-    // Log join/leave events
     socketInstance.on('user-joined', () => {
       console.log('A new user joined');
     });
+
     socketInstance.on('user-left', () => {
       console.log('A user left');
+    });
+
+    socketInstance.on('connect_error', (err) => {
+      console.error('Connection error:', err);
     });
 
     setSocket(socketInstance);
@@ -59,14 +63,12 @@ const ChatWindow = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && socket) {
-      // Generate a strong unique ID (using Date.now, crypto.randomUUID for extra uniqueness)
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id, // mark this as your message
+        senderId: socket.id,
         content: newMessage,
       };
 
-      // We only emit the message (and let our socket event add it via the received event)
       socket.emit('signal', messageToSend);
       setNewMessage('');
     }
@@ -75,25 +77,22 @@ const ChatWindow = () => {
   const handleSendFile = () => {
     if (!file || !socket) return;
 
-    const fileUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const fileMessage: Message = {
+        id: `${Date.now()}-${crypto.randomUUID()}`,
+        senderId: socket.id,
+        file: {
+          name: file.name,
+          type: file.type,
+          data: reader.result as string,
+        },
+      };
 
-    const fileMessage: Message = {
-      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random().toString(36).substr(2, 9)}`,
-      senderId: socket.id,
-      file: {
-        name: file.name,
-        url: fileUrl,
-        type: file.type,
-      },
+      socket.emit('signal', fileMessage);
+      setFile(null);
     };
-
-    setMessages((prevMessages) => {
-      const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
-      return exists ? prevMessages : [...prevMessages, fileMessage];
-    });
-
-    socket.emit('signal', fileMessage);
-    setFile(null);
+    reader.readAsDataURL(file);
   };
 
   const handleDeleteMessage = (id: string) => {
@@ -119,7 +118,7 @@ const ChatWindow = () => {
       <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
-            key={msg.id} /* now that id is consistent, we can use it as key */
+            key={msg.id}
             className={`flex ${
               msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
             }`}
@@ -137,28 +136,22 @@ const ChatWindow = () => {
                 <div className="flex flex-col gap-1 mt-2">
                   {msg.file.type.startsWith('image') ? (
                     <img
-                      src={msg.file.url}
+                      src={msg.file.data}
                       alt={msg.file.name}
                       className="w-40 h-40 object-cover rounded-md"
                     />
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600">{msg.file.name}</span>
-                      <span className="text-xs text-gray-500">{msg.file.type}</span>
-                    </div>
+                    <a
+                      href={msg.file.data}
+                      download={msg.file.name}
+                      className="text-blue-500 underline"
+                    >
+                      Download {msg.file.name}
+                    </a>
                   )}
-                  <a
-                    href={msg.file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-sm text-blue-500"
-                  >
-                    Open file
-                  </a>
                 </div>
               )}
 
-              {/* Delete Button */}
               <button
                 onClick={() => handleDeleteMessage(msg.id)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md"
@@ -180,6 +173,7 @@ const ChatWindow = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           />
           <button
             onClick={handleSendMessage}
@@ -211,5 +205,3 @@ const ChatWindow = () => {
 };
 
 export default ChatWindow;
-
-
