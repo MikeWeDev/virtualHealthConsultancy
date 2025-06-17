@@ -23,7 +23,7 @@ const ChatWindow = () => {
 
   useEffect(() => {
     const socketInstance = io(window.location.origin, {
-      path: '/api/socket_io',
+      path: '/api/socket.js',
       autoConnect: true,
       reconnection: true,
     });
