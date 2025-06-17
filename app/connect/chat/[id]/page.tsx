@@ -11,7 +11,7 @@ interface Message {
     url: string;
     type: string;
   };
-  roomId?: string;  // Added to keep room info
+  roomId?: string; // Added to keep room info
 }
 
 const ChatWindow = () => {
@@ -40,7 +40,8 @@ const ChatWindow = () => {
     socketInstance.on('signal', (incomingMessage: Message) => {
       setMessages((prevMessages) => {
         const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
-        return exists ? prevMessages : [...prevMessages, incomingMessage];
+        if (exists) return prevMessages;
+        return [...prevMessages, incomingMessage];
       });
     });
 
@@ -56,26 +57,53 @@ const ChatWindow = () => {
 
     return () => {
       socketInstance.disconnect();
+      console.log('Socket disconnected');
     };
   }, [roomId]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && socket && socket.connected) {
-      const messageToSend: Message = {
-        id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id,
-        content: newMessage,
-        roomId, // Pass the roomId for backend routing
-      };
-      socket.emit('signal', messageToSend);
-      setNewMessage('');
-    } else {
-      console.warn('⚠️ Socket not connected or message is empty');
+  const handleSendMessage = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.preventDefault();
+
+    if (!socket) {
+      console.warn('Socket not initialized');
+      return;
     }
+    if (!socket.connected) {
+      console.warn('Socket not connected');
+      return;
+    }
+    if (!newMessage.trim()) {
+      console.warn('Message is empty');
+      return;
+    }
+
+    const messageToSend: Message = {
+      id: `${Date.now()}-${crypto.randomUUID()}`,
+      senderId: socket.id,
+      content: newMessage.trim(),
+      roomId, // Pass the roomId for backend routing
+    };
+
+    console.log('📝 Sending message:', messageToSend);
+    socket.emit('signal', messageToSend);
+    setNewMessage('');
   };
 
-  const handleSendFile = () => {
-    if (!file || !socket || !socket.connected) return;
+  const handleSendFile = (e?: React.MouseEvent<HTMLButtonElement>) => {
+    if (e) e.preventDefault();
+
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
+    if (!socket) {
+      console.warn('Socket not initialized');
+      return;
+    }
+    if (!socket.connected) {
+      console.warn('Socket not connected');
+      return;
+    }
 
     const fileUrl = URL.createObjectURL(file);
 
@@ -94,9 +122,11 @@ const ChatWindow = () => {
 
     setMessages((prevMessages) => {
       const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
-      return exists ? prevMessages : [...prevMessages, fileMessage];
+      if (exists) return prevMessages;
+      return [...prevMessages, fileMessage];
     });
 
+    console.log('📤 Sending file message:', fileMessage);
     socket.emit('signal', fileMessage);
     setFile(null);
   };
@@ -118,6 +148,11 @@ const ChatWindow = () => {
           <span className="font-semibold">Dr. John Smith</span>
           <span className="text-sm text-green-200">Online</span>
         </div>
+      </div>
+
+      {/* Connection status */}
+      <div className="text-xs px-4 py-1 bg-gray-100 text-gray-600">
+        Socket connected: {socket?.connected ? '✅ Yes' : '❌ No'}
       </div>
 
       {/* Message List */}
@@ -183,6 +218,12 @@ const ChatWindow = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
           <button
             onClick={handleSendMessage}
