@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useParams } from 'next/navigation';
 
 interface Message {
   id: string;
@@ -15,9 +16,8 @@ interface Message {
   roomId?: string;
 }
 
-const roomId = 'some-room-id'; // ideally dynamic or from props/context
-
 const ChatWindow = () => {
+  const { id: roomId } = useParams(); // get dynamic roomId from URL param
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -25,16 +25,22 @@ const ChatWindow = () => {
   const [mySocketId, setMySocketId] = useState('');
 
   useEffect(() => {
+    if (!roomId) {
+      console.warn('Room ID not found in URL');
+      return;
+    }
+
     // Wake up socket server by fetching once
     fetch('/api/socket').finally(() => {
       const socketInstance = io({
-        path: '/api/socket',
+        path: '/api/socket', // must match server socket.io path
+        // If deployed somewhere else, add 'url' param here like: url: 'https://yourdomain.com',
       });
 
       socketInstance.on('connect', () => {
         console.log('✅ Connected with ID:', socketInstance.id);
         setMySocketId(socketInstance.id ?? '');
-        socketInstance.emit('join', roomId);
+        socketInstance.emit('join', roomId); // join room dynamically
       });
 
       socketInstance.on('connect_error', (err) => {
@@ -43,6 +49,7 @@ const ChatWindow = () => {
 
       socketInstance.on('signal', (incomingMessage: Message) => {
         setMessages((prev) => {
+          // avoid duplicate messages
           if (prev.some((msg) => msg.id === incomingMessage.id)) return prev;
           return [...prev, incomingMessage];
         });
@@ -63,7 +70,7 @@ const ChatWindow = () => {
         console.log('Socket disconnected');
       };
     });
-  }, []);
+  }, [roomId]);
 
   const handleSendMessage = (e?: React.MouseEvent<HTMLButtonElement>) => {
     if (e) e.preventDefault();
@@ -108,7 +115,7 @@ const ChatWindow = () => {
       id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random()
         .toString(36)
         .substring(2, 11)}`,
-       senderId: socket.id ?? '',
+      senderId: socket.id ?? '',
       file: {
         name: file.name,
         url: fileUrl,
