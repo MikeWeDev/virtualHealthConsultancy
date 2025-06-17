@@ -1,148 +1,109 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useParams } from 'next/navigation';
+import { io } from 'socket.io-client';
 
 interface Message {
   id: string;
-  senderId: string;
+  senderId: string; // used to determine if the message is yours or from someone else
   content?: string;
   file?: {
     name: string;
     url: string;
     type: string;
   };
-  roomId?: string;
 }
 
 const ChatWindow = () => {
-const params = useParams();
-
-const roomId = 
-  !params || !params.id || Array.isArray(params.id) 
-    ? '' // or handle invalid case as you want
-    : params.id;
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [mySocketId, setMySocketId] = useState('');
+  const [socket, setSocket] = useState<any>(null);
+  const [mySocketId, setMySocketId] = useState<string>(''); // store our own socket id
+  const roomId = 'some-room-id'; // adjust or make dynamic if needed
 
   useEffect(() => {
-    if (!roomId) {
-      console.warn('Room ID not found in URL');
-      return;
-    }
-
-    // Wake up socket server by fetching once
-    fetch('/api/socket').finally(() => {
-      const socketInstance = io({
-        path: '/api/socket', // must match server socket.io path
-        // If deployed somewhere else, add 'url' param here like: url: 'https://yourdomain.com',
-      });
-
-      socketInstance.on('connect', () => {
-        console.log('✅ Connected with ID:', socketInstance.id);
-        setMySocketId(socketInstance.id ?? '');
-        socketInstance.emit('join', roomId); // join room dynamically
-      });
-
-      socketInstance.on('connect_error', (err) => {
-        console.error('❌ Connection error:', err.message);
-      });
-
-      socketInstance.on('signal', (incomingMessage: Message) => {
-        setMessages((prev) => {
-          // avoid duplicate messages
-          if (prev.some((msg) => msg.id === incomingMessage.id)) return prev;
-          return [...prev, incomingMessage];
-        });
-      });
-
-      socketInstance.on('user-joined', (userId: string) => {
-        console.log(`👤 User joined: ${userId}`);
-      });
-
-      socketInstance.on('user-left', (userId: string) => {
-        console.log(`🚪 User left: ${userId}`);
-      });
-
-      setSocket(socketInstance);
-
-      return () => {
-        socketInstance.disconnect();
-        console.log('Socket disconnected');
-      };
+    const socketInstance = io('https://virtual-health-one.vercel.app', {
+      path: '/api/socket',
     });
+
+    // On connect, save your socket id and join the room
+    socketInstance.on('connect', () => {
+      console.log('Connected to socket server with id:', socketInstance.id);
+      setMySocketId(socketInstance.id ?? '');
+      socketInstance.emit('join', roomId);
+    });
+
+    // Listen for incoming messages (the server is echoing messages via 'signal')
+    socketInstance.on('signal', (incomingMessage: Message) => {
+      setMessages((prevMessages) => {
+        // Prevent duplicate messages by checking senderId and id
+        const exists = prevMessages.some((msg) => msg.id === incomingMessage.id);
+        return exists ? prevMessages : [...prevMessages, incomingMessage];
+      });
+    });
+
+    // Log join/leave events
+    socketInstance.on('user-joined', () => {
+      console.log('A new user joined');
+    });
+    socketInstance.on('user-left', () => {
+      console.log('A user left');
+    });
+
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.disconnect();
+    };
   }, [roomId]);
 
-  const handleSendMessage = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    if (e) e.preventDefault();
+  const handleSendMessage = () => {
+    if (newMessage.trim() && socket) {
+      // Generate a strong unique ID (using Date.now, crypto.randomUUID for extra uniqueness)
+      const messageToSend: Message = {
+        id: `${Date.now()}-${crypto.randomUUID()}`,
+        senderId: socket.id, // mark this as your message
+        content: newMessage,
+      };
 
-    if (!socket || !socket.connected) {
-      console.warn('Socket not connected');
-      return;
+      // We only emit the message (and let our socket event add it via the received event)
+      socket.emit('signal', messageToSend);
+      setNewMessage('');
     }
-    if (!newMessage.trim()) {
-      console.warn('Message is empty');
-      return;
-    }
-
-    const messageToSend: Message = {
-      id: `${Date.now()}-${crypto.randomUUID()}`,
-      senderId: socket.id ?? '',
-      content: newMessage.trim(),
-      roomId,
-    };
-
-    console.log('📝 Sending message:', messageToSend);
-    socket.emit('signal', messageToSend);
-    setMessages((prev) => [...prev, messageToSend]);
-    setNewMessage('');
   };
 
-  const handleSendFile = (e?: React.MouseEvent<HTMLButtonElement>) => {
-    if (e) e.preventDefault();
-
-    if (!file) {
-      console.warn('No file selected');
-      return;
-    }
-    if (!socket || !socket.connected) {
-      console.warn('Socket not connected');
-      return;
-    }
+  const handleSendFile = () => {
+    if (!file || !socket) return;
 
     const fileUrl = URL.createObjectURL(file);
 
     const fileMessage: Message = {
-      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random()
-        .toString(36)
-        .substring(2, 11)}`,
-      senderId: socket.id ?? '',
+      id: `${Date.now()}-${performance.now().toString().replace('.', '')}-${Math.random().toString(36).substr(2, 9)}`,
+      senderId: socket.id,
       file: {
         name: file.name,
         url: fileUrl,
         type: file.type,
       },
-      roomId,
     };
 
-    setMessages((prev) => [...prev, fileMessage]);
-    console.log('📤 Sending file message:', fileMessage);
+    setMessages((prevMessages) => {
+      const exists = prevMessages.some((msg) => msg.id === fileMessage.id);
+      return exists ? prevMessages : [...prevMessages, fileMessage];
+    });
+
     socket.emit('signal', fileMessage);
     setFile(null);
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+    setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== id));
   };
 
   return (
     <div className="w-full max-w-3xl mx-auto p-0 bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col h-[600px]">
       {/* Top Navbar */}
-      <div className="flex items-center gap-4 p-4 border-b bg-red-500 text-white rounded-t-lg">
+      <div className="flex items-center gap-4 p-4 border-b bg-blue-500 text-white rounded-t-lg">
         <img
           src="https://randomuser.me/api/portraits/men/32.jpg"
           alt="Doctor Avatar"
@@ -154,17 +115,14 @@ const roomId =
         </div>
       </div>
 
-      {/* Connection status */}
-      <div className="text-xs px-4 py-1 bg-gray-100 text-gray-600">
-        Socket connected: {socket?.connected ? '✅ Yes' : '❌ No'}
-      </div>
-
       {/* Message List */}
       <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div
-            key={msg.id}
-            className={`flex ${msg.senderId === mySocketId ? 'justify-end' : 'justify-start'}`}
+            key={msg.id} /* now that id is consistent, we can use it as key */
+            className={`flex ${
+              msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
+            }`}
           >
             <div
               className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${
@@ -222,12 +180,6 @@ const roomId =
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
             className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
           />
           <button
             onClick={handleSendMessage}
@@ -259,3 +211,5 @@ const roomId =
 };
 
 export default ChatWindow;
+
+
