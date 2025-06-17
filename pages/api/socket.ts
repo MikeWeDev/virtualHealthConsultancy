@@ -3,11 +3,32 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as NetServer } from 'http';
 
+// Extend the type of res.socket to add our .io property
+declare module 'net' {
+  interface Socket {
+    server?: NetServer & {
+      io?: SocketIOServer;
+    };
+  }
+}
+
 const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
+  if (!res.socket) {
+    res.status(500).end();
+    return;
+  }
+
+  if (!res.socket.server) {
+    res.status(500).end();
+    return;
+  }
+
   if (!res.socket.server.io) {
     console.log('Initializing Socket.IO server...');
 
-    const httpServer = res.socket.server as unknown as NetServer;
+    // Cast socket.server to NetServer with .io property
+    const httpServer = res.socket.server as NetServer;
+
     const io = new SocketIOServer(httpServer, {
       path: '/api/socket',  // important: matches client path
       cors: {
@@ -26,16 +47,14 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       socket.on('signal', (message) => {
-        // Broadcast to everyone in the same room except sender
         if (message.roomId) {
           socket.to(message.roomId).emit('signal', message);
         }
       });
 
       socket.on('disconnecting', () => {
-        // Emit user-left for all rooms this socket was in
         socket.rooms.forEach((room) => {
-          if (room !== socket.id) { // exclude personal socket room
+          if (room !== socket.id) {
             socket.to(room).emit('user-left', socket.id);
           }
         });
@@ -50,6 +69,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
   } else {
     console.log('Socket.IO server already initialized');
   }
+
   res.end();
 };
 
