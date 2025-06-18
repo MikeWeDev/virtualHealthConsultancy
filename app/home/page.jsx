@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { IoArrowBack, IoArrowForward } from 'react-icons/io5';
 import newDatas from './ProductPage'
+import Navbar  from '../../components/Nav'
 
 const reviews = [
   {
@@ -114,64 +115,11 @@ useEffect(() => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-              <header className="bg-white shadow-md p-4 flex justify-between items-center border-b-4 border-gray-300">
-            <h1 className="text-2xl font-bold text-green-600">EThealth</h1>
-            <nav>
-              <ul className="flex space-x-4 items-center">
-                <li>
-                  <a
-                    href="#about"
-                    className="text-gray-700 hover:text-green-600 transition duration-300 ease-in-out"
-                  >
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#patients"
-                    className="text-gray-700 hover:text-green-600 transition duration-300 ease-in-out"
-                  >
-                    Patients
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#contact"
-                    className="text-gray-700 hover:text-green-600 transition duration-300 ease-in-out"
-                  >
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#locations"
-                    className="text-gray-700 hover:text-green-600 transition duration-300 ease-in-out"
-                  >
-                    Locations
-                  </a>
-                </li>
-                <li>
-                  <Link href='/patient'>
-                    <div className="relative">
-                      <Image
-                        src="/doctorList/doctor1.jpg"
-                        alt="guest"
-                        width={40}
-                        height={40}
-                        className="rounded-full border-2 border-gray-400 hover:border-green-600 transition-all duration-300 ease-in-out transform hover:scale-110"
-                      />
-                    </div>
-                  </Link>
-                </li>
-
-              </ul>
-            </nav>
-          </header>
-
+      
+       <Navbar />
 
       <section className="py-16 px-6 md:px-20 bg-green-100 border-b-4 border-gray-300">
       <div className="flex flex-col md:flex-row items-center gap-10">
-      
         {/* 👉 Right Text Section */}
         <div className="md:w-1/2 w-full text-left">
           <h2 className="text-4xl font-bold text-green-700">Nurturing Health, Building Trust</h2>

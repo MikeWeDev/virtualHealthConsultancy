@@ -81,7 +81,7 @@ const Dashboard = () => {
             <div className="bg-blue-50 rounded-lg shadow-lg p-4">
               <h2 className="text-xl font-semibold text-blue-900 mb-3 text-center">Video Call</h2>
               <div className="text-center">
-                <Link href="/connect/videocall">
+                <Link href="/connect/videocall/123">
                   <button className="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-700 transition duration-300">
                     Start Video Call
                   </button>

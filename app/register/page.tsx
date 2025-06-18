@@ -37,7 +37,7 @@ export default function RegisterPage() {
         setStatus('success');
         setMessage('Registration successful! Redirecting...');
         setForm({ name: '', password: '', role: 'patient' });
-        setTimeout(() => router.push('/login'), 2000);
+        setTimeout(() => router.push('/'), 2000);
       }
     } catch (err) {
       setStatus('error');
