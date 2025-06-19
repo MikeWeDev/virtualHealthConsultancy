@@ -63,7 +63,7 @@ function NavLinks() {
       <li>
         <Link href="/patient">
           <Image
-            src="/black-man-profile.htm"
+            src="/smiling-african-american-millennial-businessman-600nw-1437938108.webp"
             alt="guest"
             width={40}
             height={40}
