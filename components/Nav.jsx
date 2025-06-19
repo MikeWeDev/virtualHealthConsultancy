@@ -65,8 +65,8 @@ function NavLinks() {
           <Image
             src="/smiling-african-american-millennial-businessman-600nw-1437938108.webp"
             alt="guest"
-            width={40}
-            height={40}
+            width={50}
+            height={50}
             className="rounded-full border-2 border-gray-400 hover:border-green-600 transition-all duration-300 ease-in-out transform hover:scale-110"
           />
         </Link>
