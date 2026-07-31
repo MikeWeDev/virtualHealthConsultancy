@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (server.io) {
+  if (server.videoIo) {
     console.log('✅ Socket.io server already running');
     res.end();
     return;
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     },
   });
 
-  server.io = io;
+  server.videoIo = io;
 
   io.on('connection', (socket) => {
     console.log('🟢 Socket connected:', socket.id);

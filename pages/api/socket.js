@@ -2,7 +2,7 @@
 import { Server } from "socket.io";
 
 export default function handler(req, res) {
-  if (res.socket.server.io) {
+  if (res.socket.server.chatIo) {
     console.log("Socket.io server already running");
     res.end();
     return;
@@ -11,15 +11,14 @@ export default function handler(req, res) {
   console.log("Starting new Socket.io server...");
 
   const io = new Server(res.socket.server, {
-    path: "/api/socket_io",
-    addTrailingSlash: false,
+    path: "/api/socket",
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
     },
   });
 
-  res.socket.server.io = io;
+  res.socket.server.chatIo = io;
 
   io.on("connection", (socket) => {
     console.log(`New connection: ${socket.id}`);
