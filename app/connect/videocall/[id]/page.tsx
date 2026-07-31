@@ -17,6 +17,7 @@ export default function VideoCall() {
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
   const isInitiator = useRef<boolean>(false);
+  const offerSent = useRef<boolean>(false);
 
   const [muted, setMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(false);
@@ -30,11 +31,12 @@ export default function VideoCall() {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
-    pc.current.onnegotiationneeded = async () => {
-      if (!isInitiator.current) return;
-      const offer = await pc.current!.createOffer();
-      await pc.current!.setLocalDescription(offer);
-      socket.current!.emit('webrtc-signal', { type: 'offer', offer, roomId });
+    const createAndSendOffer = async () => {
+      if (!pc.current || !socket.current || offerSent.current) return;
+      const offer = await pc.current.createOffer();
+      await pc.current.setLocalDescription(offer);
+      socket.current.emit('webrtc-signal', { type: 'offer', offer, roomId });
+      offerSent.current = true;
     };
 
     pc.current.onicecandidate = event => {
