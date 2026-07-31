@@ -65,9 +65,14 @@ export default function VideoCall() {
       })
       .catch(() => alert('Camera & microphone access are required.'));
 
-    socket.current.on('you-are-initiator', async () => {
+    socket.current.on('you-are-initiator', () => {
       isInitiator.current = true;
-      await createAndSendOffer();
+    });
+
+    socket.current.on('user-joined', async () => {
+      if (isInitiator.current) {
+        await createAndSendOffer();
+      }
     });
 
     socket.current.on('webrtc-signal', async data => {
