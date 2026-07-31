@@ -41,15 +41,20 @@ export default function VideoCall() {
 
     pc.current.onicecandidate = event => {
       if (event.candidate) {
+        console.log('Sending ICE candidate', event.candidate);
         socket.current!.emit('webrtc-signal', { type: 'candidate', candidate: event.candidate, roomId });
       }
     };
 
     pc.current.ontrack = event => {
-      const [remoteStream] = event.streams;
+      const remoteStream = event.streams[0] ?? new MediaStream();
+      if (event.track && !remoteStream.getTracks().length) {
+        remoteStream.addTrack(event.track);
+      }
       if (remoteVideoRef.current) {
+        console.log('Remote track received, setting remote stream');
         remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.play().catch(() => {});
+        remoteVideoRef.current.play().catch(err => console.warn('Remote video play failed', err));
       }
     };
 
