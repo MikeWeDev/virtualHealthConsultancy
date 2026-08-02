@@ -49,7 +49,7 @@ const BookingSection = () => {
             <input
               type="date"
               id="date"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -62,7 +62,7 @@ const BookingSection = () => {
             <input
               type="time"
               id="time"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black"
               value={time}
               onChange={(e) => setTime(e.target.value)}
             />

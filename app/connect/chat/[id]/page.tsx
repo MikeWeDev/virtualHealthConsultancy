@@ -211,7 +211,7 @@ const ChatWindow = () => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message"
-            className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 p-3 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           />
           <button
@@ -230,7 +230,7 @@ const ChatWindow = () => {
           />
           {file && (
             <div className="flex items-center gap-2">
-              <span className="text-sm truncate max-w-[100px]">{file.name}</span>
+              <span className="text-sm text-black truncate max-w-[100px]">{file.name}</span>
               <button
                 onClick={() => setFile(null)}
                 className="text-red-500 hover:text-red-700"
