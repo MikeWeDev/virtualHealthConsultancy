@@ -64,10 +64,6 @@ const ChatWindow = () => {
       console.log(`User left: ${userId}`);
     };
 
-    const handleConnectError = (err: any) => {
-      console.error('Connection error:', err);
-    };
-
     socketInstance.on('connect', handleConnect);
     socketInstance.on('signal', handleSignal);
     socketInstance.on('user-joined', handleUserJoined);
