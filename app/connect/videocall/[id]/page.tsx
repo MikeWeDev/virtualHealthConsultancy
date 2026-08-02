@@ -12,6 +12,7 @@ export default function VideoCall() {
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteStreamRef = useRef<MediaStream>(new MediaStream());
 
   const socket = useRef<Socket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
@@ -26,7 +27,7 @@ export default function VideoCall() {
   useEffect(() => {
     if (!roomId) return;
 
-    socket.current = io({ path: '/api/video/socket' });
+    socket.current = io({ path: '/api/video/socket', transports: ['websocket'], autoConnect: true, reconnection: true });
     pc.current = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
@@ -47,13 +48,15 @@ export default function VideoCall() {
     };
 
     pc.current.ontrack = event => {
-      const remoteStream = event.streams[0] ?? new MediaStream();
-      if (event.track && !remoteStream.getTracks().length) {
+      const remoteStream = remoteStreamRef.current;
+      if (event.streams && event.streams[0]) {
+        remoteStreamRef.current = event.streams[0];
+      } else if (event.track) {
         remoteStream.addTrack(event.track);
       }
+
       if (remoteVideoRef.current) {
-        console.log('Remote track received, setting remote stream');
-        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
         remoteVideoRef.current.play().catch(err => console.warn('Remote video play failed', err));
       }
     };

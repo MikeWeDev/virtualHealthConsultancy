@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { io } from 'socket.io-client';
 
 interface Message {
@@ -14,12 +15,14 @@ interface Message {
 }
 
 const ChatWindow = () => {
+  const { id } = useParams() as { id?: string };
+  const roomId = id ?? 'default-chat-room';
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [socket, setSocket] = useState<any>(null);
   const [mySocketId, setMySocketId] = useState<string>('');
-  const roomId = 'some-room-id';
 
   useEffect(() => {
     const socketInstance = io({
@@ -29,38 +32,49 @@ const ChatWindow = () => {
       reconnection: true,
     });
 
-    socketInstance.on('connect', () => {
+    const handleConnect = () => {
       console.log('Connected:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
-    });
+    };
 
-    socketInstance.on('signal', (incomingMessage: Message) => {
+    const handleSignal = (incomingMessage: Message) => {
       console.log('Received message:', incomingMessage);
       setMessages(prevMessages => {
-        // Check if message already exists (by ID)
         if (prevMessages.some(msg => msg.id === incomingMessage.id)) {
           return prevMessages;
         }
         return [...prevMessages, incomingMessage];
       });
-    });
+    };
 
-    socketInstance.on('user-joined', (userId: string) => {
+    const handleUserJoined = (userId: string) => {
       console.log(`User joined: ${userId}`);
-    });
+    };
 
-    socketInstance.on('user-left', (userId: string) => {
+    const handleUserLeft = (userId: string) => {
       console.log(`User left: ${userId}`);
-    });
+    };
 
-    socketInstance.on('connect_error', (err) => {
+    const handleConnectError = (err: any) => {
       console.error('Connection error:', err);
-    });
+    };
+
+    socketInstance.on('connect', handleConnect);
+    socketInstance.on('signal', handleSignal);
+    socketInstance.on('user-joined', handleUserJoined);
+    socketInstance.on('user-left', handleUserLeft);
+    socketInstance.on('connect_error', handleConnectError);
 
     setSocket(socketInstance);
 
     return () => {
+      socketInstance.off('connect', handleConnect);
+      socketInstance.off('signal', handleSignal);
+      socketInstance.off('user-joined', handleUserJoined);
+      socketInstance.off('user-left', handleUserLeft);
+      socketInstance.off('connect_error', handleConnectError);
+      socketInstance.emit('leave', roomId);
       socketInstance.disconnect();
     };
   }, [roomId]);
