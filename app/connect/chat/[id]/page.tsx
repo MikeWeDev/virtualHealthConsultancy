@@ -25,17 +25,25 @@ const ChatWindow = () => {
   const [mySocketId, setMySocketId] = useState<string>('');
 
   useEffect(() => {
-    const socketInstance = io({
+    const socketInstance = io(typeof window !== 'undefined' ? window.location.origin : '/', {
       path: '/api/socket',
-      transports: ['websocket'],
-      autoConnect: true,
+      autoConnect: false,
       reconnection: true,
+      timeout: 20000,
     });
 
     const handleConnect = () => {
       console.log('Connected:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
+    };
+
+    const handleConnectError = (err: any) => {
+      console.error('Connection error:', err);
+    };
+
+    const handleConnectTimeout = () => {
+      console.error('Socket connect timeout');
     };
 
     const handleSignal = (incomingMessage: Message) => {
@@ -65,7 +73,9 @@ const ChatWindow = () => {
     socketInstance.on('user-joined', handleUserJoined);
     socketInstance.on('user-left', handleUserLeft);
     socketInstance.on('connect_error', handleConnectError);
+    socketInstance.on('connect_timeout', handleConnectTimeout);
 
+    socketInstance.open();
     setSocket(socketInstance);
 
     return () => {
@@ -74,6 +84,7 @@ const ChatWindow = () => {
       socketInstance.off('user-joined', handleUserJoined);
       socketInstance.off('user-left', handleUserLeft);
       socketInstance.off('connect_error', handleConnectError);
+      socketInstance.off('connect_timeout', handleConnectTimeout);
       socketInstance.emit('leave', roomId);
       socketInstance.disconnect();
     };
