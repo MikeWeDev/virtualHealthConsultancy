@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -6,47 +7,54 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-sm shadow-slate-200">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-gradient-to-r from-emerald-600 to-cyan-500 text-lg font-black text-white shadow-lg">
+    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl transition-all">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-4">
+        {/* Brand Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-lg font-black text-slate-950 shadow-lg shadow-emerald-500/20 transition-transform group-hover:scale-105">
             E
           </div>
           <div>
-            <p className="text-lg font-semibold text-slate-900">EThealth</p>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Care Anywhere</p>
+            <p className="text-lg font-extrabold text-white tracking-tight">EThealth</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-400">Care Anywhere</p>
           </div>
         </Link>
 
+        {/* Desktop Navigation Links */}
         <nav className="hidden flex-1 md:block">
-          <ul className="flex items-center justify-center gap-8 text-sm font-medium text-slate-700">
+          <ul className="flex items-center justify-center gap-8 text-sm font-medium text-slate-300">
             <li>
-              <a href="#services" className="transition hover:text-emerald-600">Services</a>
+              <a href="#services" className="transition-colors hover:text-emerald-400">Services</a>
             </li>
             <li>
-              <a href="#doctors" className="transition hover:text-emerald-600">Doctors</a>
+              <a href="#doctors" className="transition-colors hover:text-emerald-400">Doctors</a>
             </li>
             <li>
-              <a href="#reviews" className="transition hover:text-emerald-600">Reviews</a>
+              <a href="#reviews" className="transition-colors hover:text-emerald-400">Reviews</a>
             </li>
             <li>
-              <a href="#contact" className="transition hover:text-emerald-600">Contact</a>
+              <a href="#contact" className="transition-colors hover:text-emerald-400">Contact</a>
             </li>
           </ul>
         </nav>
 
+        {/* Desktop Call to Action */}
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/patient" className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-slate-400 transition hover:bg-slate-800">
+          <Link 
+            href="/patient" 
+            className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
+          >
             Patient Login
           </Link>
         </div>
 
+        {/* Mobile Menu Toggle Button */}
         <button
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 md:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 shadow-sm transition-colors hover:border-slate-700 hover:bg-slate-800 hover:text-white md:hidden"
           onClick={() => setMenuOpen((prev) => !prev)}
           aria-label="Toggle navigation menu"
         >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {menuOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             ) : (
@@ -56,23 +64,52 @@ export default function Navbar() {
         </button>
       </div>
 
+      {/* Mobile Menu Drawer */}
       {menuOpen && (
-        <nav className="border-t border-slate-200 bg-white/95 px-6 py-5 md:hidden">
-          <ul className="flex flex-col gap-4 text-sm font-medium text-slate-700">
+        <nav className="border-t border-slate-800 bg-slate-950/95 px-6 py-5 backdrop-blur-xl md:hidden">
+          <ul className="flex flex-col gap-3 text-sm font-medium text-slate-300">
             <li>
-              <a href="#services" className="block rounded-3xl px-4 py-3 transition hover:bg-slate-100">Services</a>
+              <a 
+                href="#services" 
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
+              >
+                Services
+              </a>
             </li>
             <li>
-              <a href="#doctors" className="block rounded-3xl px-4 py-3 transition hover:bg-slate-100">Doctors</a>
+              <a 
+                href="#doctors" 
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
+              >
+                Doctors
+              </a>
             </li>
             <li>
-              <a href="#reviews" className="block rounded-3xl px-4 py-3 transition hover:bg-slate-100">Reviews</a>
+              <a 
+                href="#reviews" 
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
+              >
+                Reviews
+              </a>
             </li>
             <li>
-              <a href="#contact" className="block rounded-3xl px-4 py-3 transition hover:bg-slate-100">Contact</a>
+              <a 
+                href="#contact" 
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
+              >
+                Contact
+              </a>
             </li>
-            <li>
-              <Link href="/patient" className="block rounded-3xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800">
+            <li className="pt-2">
+              <Link 
+                href="/patient" 
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              >
                 Patient Login
               </Link>
             </li>
