@@ -1,51 +1,53 @@
 'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { IoArrowBack, IoArrowForward } from 'react-icons/io5';
-import newDatas from './ProductPage'
-import Navbar  from '../../components/Nav'
+import { 
+  Star, 
+  Search, 
+  ArrowRight, 
+  ShieldCheck, 
+  Clock, 
+  HeartHandshake, 
+  PhoneCall, 
+  Mail, 
+  UserCheck, 
+  Calendar, 
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  Award
+} from 'lucide-react';
+import newDatas from './ProductPage';
+import Navbar from '../../components/Nav';
 
 const reviews = [
   {
-    name: 'Emily R.',
-    role: 'Therapist',
-    feedback: 'This service has transformed the way I connect with patients. Incredibly smooth experience!',
-    image: 'https://randomuser.me/api/portraits/women/65.jpg',
-    rating: 5
+    name: 'Dr. Emily R.',
+    role: 'Licensed Therapist',
+    feedback: 'This platform has transformed how I manage patient relationships. The seamless telehealth integration and intuitive scheduling save me hours every week.',
+    image: 'https://images.unsplash.com/photo-1594824813566-7885a39644d6?auto=format&fit=crop&q=80&w=250',
+    rating: 5,
+    tag: 'Verified Practitioner'
   },
   {
-    name: 'Daniel M.',
+    name: 'Dr. Daniel M.',
     role: 'Cardiologist',
-    feedback: 'Amazing UI and reliable video calls. Booking appointments is seamless.',
-    image: 'https://randomuser.me/api/portraits/men/32.jpg',
-    rating: 4.5
+    feedback: 'High-definition video calls and instant record sharing make digital consults feel just as personal and thorough as in-person visits.',
+    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250',
+    rating: 5,
+    tag: 'Clinical Specialist'
   },
   {
     name: 'Sophia L.',
-    role: 'Nutritionist',
-    feedback: 'Love how I can manage patient history and chats with ease!',
-    image: 'https://randomuser.me/api/portraits/women/44.jpg',
-    rating: 4
-  }
+    role: 'Clinical Nutritionist',
+    feedback: 'Patients love how easy it is to book appointments and track their wellness plans. Highly recommended for modern clinics!',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250',
+    rating: 4.5,
+    tag: 'Health Coach'
+  },
 ];
-const getStars = (rating) => {
-  const fullStars = Math.floor(rating);
-  const halfStar = rating % 1 !== 0;
-  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
-  return (
-    <div className="text-yellow-500">
-      {[...Array(fullStars)].map((_, i) => (
-        <span key={`full-${i}`}>★</span>
-      ))}
-      {halfStar && <span>★</span>} {/* Use full star symbol for half star */}
-      {[...Array(emptyStars)].map((_, i) => (
-        <span key={`empty-${i}`}>✩</span>
-      ))}
-    </div>
-  );
-};
 
 const heroImages = [
   '/home/photo_3_2025-04-22_22-05-16.jpg',
@@ -54,205 +56,433 @@ const heroImages = [
   '/home/photo_25_2025-04-22_22-05-17.jpg',
 ];
 
+const features = [
+  {
+    icon: ShieldCheck,
+    title: 'HIPAA Compliant',
+    description: 'Bank-grade encryption protecting patient privacy and confidential clinical records.',
+  },
+  {
+    icon: Clock,
+    title: 'Instant Booking',
+    description: 'Bypass long waiting queues with real-time schedule alignment and instant confirmations.',
+  },
+  {
+    icon: HeartHandshake,
+    title: 'Dedicated Care Hub',
+    description: 'Integrated follow-ups, direct doctor messaging, and automatic prescriptions.',
+  },
+];
+
+const services = [
+  {
+    title: 'Family Medicine',
+    description: 'Comprehensive primary care tailored for adults and children with dedicated medical teams.',
+    image: '/service/photo_6_2025-04-22_22-05-17.jpg',
+    badge: 'Primary Care'
+  },
+  {
+    title: 'Pediatric Care',
+    description: 'Child-focused healthcare designed with gentle attention for growing families.',
+    image: '/service/photo_11_2025-04-22_22-05-17.jpg',
+    badge: 'Child Health'
+  },
+  {
+    title: 'Specialist Consults',
+    description: 'Direct priority access to top clinical specialists for immediate health needs.',
+    image: '/service/photo_19_2025-04-22_22-05-17.jpg',
+    badge: 'Specialized'
+  },
+];
+
 export default function Home() {
-  const [product, setProduct] = useState('');
-  const [color, setColor] = useState('');
-  const [type, setType] = useState('');
-  const [time, setTime] = useState('');
-  const [carts, setCarts] = useState([]);
-  const [info, setInfo] = useState([]);
-  const [warning, setWarning] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [search, setSearch] = useState('');
   const [heroIndex, setHeroIndex] = useState(0);
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    setHeroIndex((prev) => (prev + 1) % heroImages.length);
-  }, 2000); // Change image every 4 seconds
-  return () => clearInterval(interval);
-}, []);
-
-
-
-  const nextReview = () => setIndex((prev) => (prev + 1) % reviews.length);
-  const prevReview = () => setIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
+  const [reviewIndex, setReviewIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(nextReview, 6000);
-    return () => clearInterval(interval);
+    const timer = setInterval(() => {
+      setHeroIndex((current) => (current + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
 
-  const { name, role, feedback, image, rating } = reviews[index];
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setReviewIndex((current) => (current + 1) % reviews.length);
+    }, 6500);
+    return () => clearInterval(timer);
+  }, []);
 
-  const handleClick = (item) => {
-    if (carts.some((cartItem) => cartItem.id === item.id)) {
-      setWarning(true);
-      alert('PRODUCT ALREADY EXISTS');
-    } else {
-      setCarts([...carts, item]);
-    }
+  const filteredDoctors = newDatas.filter((item) =>
+    search ? item.fName?.toLowerCase().includes(search.toLowerCase()) || item.Name?.toLowerCase().includes(search.toLowerCase()) : true
+  );
+
+  const currentReview = reviews[reviewIndex];
+
+  const renderStars = (rating) => {
+    return (
+      <div className="inline-flex gap-1 text-amber-400">
+        {[...Array(5)].map((_, i) => (
+          <Star 
+            key={i} 
+            className={`h-5 w-5 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} 
+          />
+        ))}
+      </div>
+    );
   };
-
-  const handleInfoChange = (pro, d = 1) => {
-    const tempArr = [...info];
-    const index = tempArr.findIndex((data) => data.id === pro.id);
-
-    if (index !== -1) {
-      tempArr[index].amount += d;
-      if (tempArr[index].amount <= 0) tempArr[index].amount = 1;
-    } else {
-      tempArr.push({ ...pro, amount: 1 });
-    }
-
-    setInfo(tempArr);
-  };
-
-  const filteredProducts = newDatas
-    .filter((item) => (color ? item.color === color : true))
-    .filter((item) => (type ? item.type === type : true))
-    .filter((item) => (time ? item.time === time : true))
-    .filter((item) => product ? item.fName.toLowerCase().includes(product.toLowerCase()) : true);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      
-       <Navbar />
+    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
+      <Navbar />
 
-      <section className="py-16 px-6 md:px-20 bg-green-100 border-b-4 border-gray-300">
-      <div className="flex flex-col md:flex-row items-center gap-10">
-        {/* 👉 Right Text Section */}
-        <div className="md:w-1/2 w-full text-left">
-          <h2 className="text-4xl font-bold text-green-700">Nurturing Health, Building Trust</h2>
-          <p className="mt-4 text-gray-600 max-w-lg">
-            Patient-centered care. We specialize in family medicine, pediatrics, and women’s health.
-          </p>
-          <button className="mt-6 bg-green-600 text-white px-6 py-2 rounded-lg">
-            Visit Us Today
-          </button>
-        </div>
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-20 space-y-24">
+        
+        {/* HERO SECTION */}
+        <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 p-8 lg:p-14 shadow-2xl">
+          {/* Background Ambient Glows */}
+          <div className="absolute top-0 right-1/4 h-96 w-96 rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 left-10 h-96 w-96 rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />
 
-          {/* 👈 Left Image Section */}
-          <div className="md:w-1/2 w-full">
-          <Image
-            src={heroImages[heroIndex]}
-            alt="Slideshow"
-            width={500}
-            height={350}
-            className="rounded-lg shadow-lg border-4 border-gray-400 object-cover w-full h-auto"
-          />
-        </div>
-      </div>
-    </section>
+          <div className="grid gap-12 lg:grid-cols-12 lg:items-center relative z-10">
+            {/* Left Content Column */}
+            <div className="lg:col-span-7 space-y-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Virtual Care Reimagined
+              </div>
 
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl leading-[1.15]">
+                Healthcare built for <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">modern living.</span>
+              </h1>
 
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 border-b-4 border-gray-300">
-        {[
-          '/service/photo_6_2025-04-22_22-05-17.jpg',
-          '/service/photo_11_2025-04-22_22-05-17.jpg',
-          '/service/photo_19_2025-04-22_22-05-17.jpg'
-        ].map((img, i) => (
-          <div key={i} className="bg-gray-200 p-4 rounded-lg text-center shadow border-4 border-gray-400">
-            <h4 className="text-xl font-semibold text-green-600">
-              {['Elderly & Outpatient Care', 'Pediatrics', 'Compassionate Physicians'][i]}
-            </h4>
-            <div className="relative w-full h-48">
-            <Image
-  src={img}
-  alt={`service-${i}`}
- 
-  className="rounded-lg mx-auto border-4 border-gray-600"
-  style={{ objectFit: 'cover' }} // To make the image fit within the dimensions
-  layout="fill" // Ensures the image retains its aspect ratio
-/>
+              <p className="max-w-xl text-lg text-slate-300 leading-relaxed">
+                Connect with world-class specialists, schedule video consultations in seconds, and direct your personal health record—all within one intuitive ecosystem.
+              </p>
 
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <Link 
+                  href="/patient" 
+                  className="group inline-flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
+                >
+                  Book a Visit
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <a 
+                  href="#services" 
+                  className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 px-8 py-4 text-sm font-semibold text-white transition-all hover:border-slate-500 hover:bg-slate-800"
+                >
+                  Explore Services
+                </a>
+              </div>
+
+              {/* Stat Counters */}
+              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-6">
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">99.8%</p>
+                  <p className="text-xs text-slate-400 mt-1">Satisfaction Rate</p>
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">15 min</p>
+                  <p className="text-xs text-slate-400 mt-1">Avg Response</p>
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">250+</p>
+                  <p className="text-xs text-slate-400 mt-1">Top Doctors</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Hero Image Column */}
+            <div className="lg:col-span-5">
+              <div className="relative rounded-2xl border border-slate-800 bg-slate-900/50 p-3 shadow-2xl backdrop-blur-xl">
+                <div className="relative h-[400px] sm:h-[480px] overflow-hidden rounded-xl">
+                  {heroImages.map((src, index) => (
+                    <Image
+                      key={src}
+                      src={src}
+                      alt="Healthcare professional"
+                      fill
+                      priority={index === 0}
+                      className={`object-cover transition-opacity duration-1000 ease-in-out ${
+                        index === heroIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
+                      }`}
+                    />
+                  ))}
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+                  {/* Carousel Indicators */}
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
+                    {heroImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setHeroIndex(idx)}
+                        aria-label={`Go to slide ${idx + 1}`}
+                        className={`h-2 rounded-full transition-all ${
+                          idx === heroIndex ? 'w-8 bg-emerald-400' : 'w-2 bg-white/40'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Floating Overlay Badge */}
+                <div className="absolute -bottom-6 -left-6 hidden sm:flex items-center gap-4 rounded-2xl border border-slate-700 bg-slate-900/90 p-4 shadow-2xl backdrop-blur-md">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <UserCheck className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">Verified Specialists</p>
+                    <p className="text-xs text-slate-400">Ready for instant consultations</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
-      </section>
+        </section>
 
+        {/* FEATURES GRID */}
+        <section className="grid gap-6 md:grid-cols-3">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <div 
+                key={feature.title} 
+                className="group relative rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-900/90"
+              >
+                <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 transition-colors group-hover:bg-emerald-500 group-hover:text-slate-950">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-white">{feature.title}</h3>
+                <p className="mt-2 text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+              </div>
+            );
+          })}
+        </section>
 
+        {/* SERVICES SECTION */}
+        <section id="services" className="space-y-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-3 max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Clinical Excellence</span>
+              <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Comprehensive Healthcare Services</h2>
+            </div>
+            <p className="text-slate-400 text-sm max-w-sm">
+              Tailored medical care built around your schedule, bringing board-certified doctors directly to your home.
+            </p>
+          </div>
 
+          <div className="grid gap-8 md:grid-cols-3">
+            {services.map((service) => (
+              <div 
+                key={service.title} 
+                className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-700"
+              >
+                <div className="relative h-64 w-full overflow-hidden bg-slate-800">
+                  <Image 
+                    src={service.image} 
+                    alt={service.title} 
+                    fill 
+                    className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                  <span className="absolute top-4 left-4 rounded-full border border-slate-700 bg-slate-950/80 px-3 py-1 text-xs font-semibold text-emerald-400 backdrop-blur-md">
+                    {service.badge}
+                  </span>
+                </div>
 
+                <div className="p-6 space-y-4">
+                  <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    {service.title}
+                  </h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">{service.description}</p>
+                  
+                  <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+                    <span className="text-xs font-semibold text-slate-300">Book Teleconsultation</span>
+                    <ArrowRight className="h-4 w-4 text-emerald-400 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <div className="mt-[80px] px-6 py-8 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-lg">
-        <div className="flex flex-wrap justify-start gap-6 mb-8">
-          <select
-            onChange={(e) => setColor(e.target.value)}
-            className="p-3 border border-gray-300 rounded-lg text-black w-[40%] sm:w-[25%] focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-          >
-            <option value="">Select Color</option>
-            <option value="black">Black</option>
-            <option value="blue">Blue</option>
-            <option value="white">White</option>
-            <option value="red">Red</option>
-          </select>
+        {/* DOCTORS DIRECTORY */}
+        <section id="doctors" className="space-y-10">
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Our Medical Board</span>
+              <h2 className="mt-2 text-3xl font-extrabold text-white sm:text-4xl">Meet Available Specialists</h2>
+            </div>
 
-          <input
-            type="text"
-            value={product}
-            onChange={(e) => setProduct(e.target.value)}
-            placeholder="Search Product"
-            className="p-3 border border-gray-300 rounded-lg w-[40%] sm:w-[25%] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-          />
-        </div>
+            {/* Search Input */}
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by doctor name or specialty..."
+                className="w-full rounded-full border border-slate-800 bg-slate-900/90 py-3.5 pr-4 pl-11 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-          {filteredProducts.map((item, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl transition-all ease-in-out transform hover:scale-105">
-              <div className="relative w-full h-48 rounded-md overflow-hidden">
-              <img
-  src={item.img}
-  alt={item.Name}
-  className="w-full h-full object-cover object-top"
-/>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredDoctors.slice(0, 6).map((item) => (
+              <div 
+                key={item.id} 
+                className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-900"
+              >
+                <div className="relative h-64 overflow-hidden rounded-xl bg-slate-800">
+                  <Image 
+                    src={item.img} 
+                    alt={item.Name || 'Doctor profile'} 
+                    fill 
+                    className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                  <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-400 backdrop-blur-md border border-slate-700">
+                    {item.type || 'Specialist'}
+                  </span>
+                </div>
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black opacity-50 rounded-md"></div>
+                <div className="mt-5 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      {item.Name || item.fName}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">{item.color || 'Senior Practitioner'}</p>
+                  </div>
+
+                  <Link 
+                    href={`/doctor/${item.id}`} 
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 py-3 text-sm font-semibold text-white transition-all hover:border-emerald-500/50 hover:bg-emerald-500 hover:text-slate-950"
+                  >
+                    View Profile & Schedule
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* REVIEWS CAROUSEL */}
+        <section id="reviews" className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-8 sm:p-14 shadow-2xl">
+          <div className="mx-auto max-w-3xl text-center space-y-3">
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Clinical Endorsements</span>
+            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Trusted by Practitioners & Patients</h2>
+          </div>
+
+          <div className="mt-12 grid gap-8 lg:grid-cols-12 lg:items-center">
+            {/* Active Review Card */}
+            <div className="lg:col-span-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl backdrop-blur-md space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={currentReview.image} 
+                    alt={currentReview.name} 
+                    className="h-16 w-16 rounded-full object-cover border-2 border-emerald-500/40" 
+                  />
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{currentReview.name}</h3>
+                    <p className="text-xs text-slate-400">{currentReview.role}</p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 text-xs text-emerald-400 font-medium">
+                  {currentReview.tag}
+                </span>
               </div>
 
-              <div className="mt-4 text-center">
-                <h3 className="text-xl font-semibold text-blue-800">{item.Name}</h3>
-                <p className="text-sm text-gray-500">{item.color} - {item.type}</p>
-              </div>
+              {renderStars(currentReview.rating)}
 
-              <div className="mt-4 flex justify-center">
-                <Link
-                  href={`/doctor/${item.id}`}
-                  onClick={() => handleInfoChange(item)}
-                  className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors duration-300"
+              <p className="text-slate-300 text-base leading-relaxed italic">
+                "{currentReview.feedback}"
+              </p>
+
+              {/* Slider Controls */}
+              <div className="flex items-center justify-end gap-2 pt-4">
+                <button
+                  onClick={() => setReviewIndex((prev) => (prev === 0 ? reviews.length - 1 : prev - 1))}
+                  aria-label="Previous review"
+                  className="rounded-full border border-slate-700 bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
                 >
-                  More Info
-                </Link>
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setReviewIndex((prev) => (prev + 1) % reviews.length)}
+                  aria-label="Next review"
+                  className="rounded-full border border-slate-700 bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white transition"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="w-full min-h-[70vh] mt-5 bg-gradient-to-r from-teal-400 via-blue-500 to-purple-600 flex flex-col items-center justify-center p-6">
-  <h2 className="text-4xl font-bold mb-2 text-center text-white">Patient Reviews</h2>
-  <p className="text-white text-center max-w-xl mb-8">See what healthcare professionals are saying about our platform.</p>
-  
-  <div className="bg-[#f4f9f9] rounded-2xl shadow-xl p-8 w-full max-w-2xl text-center transition-all duration-700">
-    <img src={image} alt={name} className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white shadow" />
-    <h3 className="text-xl font-semibold text-teal-700">{name}</h3>
-    <p className="text-sm text-gray-500 mb-3">{role}</p>
-    {getStars(rating)}
-    <p className="italic text-gray-600 mt-4">"{feedback}"</p>
-  </div>
-  
-  <div className="mt-6 flex gap-4">
-    <button onClick={prevReview} className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-full shadow">
-      <IoArrowBack size={20} />
-    </button>
-    <button onClick={nextReview} className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-full shadow">
-      <IoArrowForward size={20} />
-    </button>
-  </div>
-</div>
+            {/* Quick Metrics Cards */}
+            <div className="lg:col-span-4 space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                <Calendar className="h-6 w-6 text-emerald-400 mb-3" />
+                <h4 className="text-lg font-bold text-white">Instant Scheduling</h4>
+                <p className="mt-1 text-xs text-slate-400">Direct integration with clinic schedules for hassle-free slots.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+                <MessageSquare className="h-6 w-6 text-cyan-400 mb-3" />
+                <h4 className="text-lg font-bold text-white">Encrypted Consultation</h4>
+                <p className="mt-1 text-xs text-slate-400">End-to-end encrypted messaging and document transfers.</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
+        {/* SUPPORT / CONTACT CTA */}
+        <section id="contact" className="rounded-3xl border border-slate-800 bg-slate-950 p-8 lg:p-12 shadow-2xl">
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Need Help?</span>
+              <h2 className="text-3xl font-extrabold text-white sm:text-4xl">We’re here for you, every step of the way.</h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+                Reach out to our care team for questions, support, or to schedule a consultation with one of our doctors.
+              </p>
+            </div>
 
-      <footer className="bg-gray-800 text-white text-center py-4">
-        <p>&copy; 2025 Khealth. All rights reserved.</p>
+            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <PhoneCall className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Call us</p>
+                  <p className="text-base font-bold text-white">+1 (800) 123-4567</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">Email</p>
+                  <p className="text-base font-bold text-white">support@ethealth.com</p>
+                </div>
+              </div>
+
+              <Link 
+                href="/patient" 
+                className="flex w-full items-center justify-center rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+              >
+                Get support
+              </Link>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-800 bg-slate-950 py-10 text-center text-xs text-slate-500">
+        <p>© 2026 Khealth Platform. All rights reserved.</p>
       </footer>
     </div>
   );
