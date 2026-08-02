@@ -341,7 +341,7 @@ export default function Home() {
                     src={item.img} 
                     alt={item.Name || 'Doctor profile'} 
                     fill 
-                    className="object-cover transition-transform duration-500 group-hover:scale-105" 
+                    className="object-fill transition-transform duration-500 group-hover:scale-105" 
                   />
                   <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-400 backdrop-blur-md border border-slate-700">
                     {item.type || 'Specialist'}
