@@ -76,7 +76,7 @@ export default function LoginPage() {
               placeholder="Username"
               value={form.name}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-indigo-400 transition"
+              className="w-full text-black pl-10 pr-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-indigo-400 transition"
               required
             />
           </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               placeholder="Password"
               value={form.password}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-indigo-400 transition"
+              className="w-full text-black pl-10 pr-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-indigo-400 transition"
               required
             />
           </div>
