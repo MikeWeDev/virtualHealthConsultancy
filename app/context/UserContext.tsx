@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import apiFetch from '../../lib/apiClient';
 
 type User = { name: string; role: string } | null;
 
@@ -19,7 +20,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchMe() {
       try {
-        const res = await fetch('/api/me', { credentials: 'include' });
+        const res = await apiFetch('/api/me');
         if (!res.ok) return setUser(null);
         const data = await res.json();
         setUser({ name: data.name, role: data.role });
@@ -33,7 +34,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     try {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      await apiFetch('/api/logout', { method: 'POST' });
     } catch (err) {
       // ignore
     }

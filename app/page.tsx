@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock } from 'react-icons/fa';
+import apiFetch from '../lib/apiClient';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ name: '', password: '' });
@@ -22,11 +23,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/login', {
+      const res = await apiFetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
-        credentials: 'include', // ensure browser accepts cookies set by the server
       });
 
       const data = await res.json();

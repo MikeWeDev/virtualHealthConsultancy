@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock, FaUserMd } from 'react-icons/fa';
+import apiFetch from '../../lib/apiClient';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', password: '', role: 'patient' });
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     setStatus('loading');
 
     try {
-      const res = await fetch('/api/register', {
+      const res = await apiFetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
