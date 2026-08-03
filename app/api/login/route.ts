@@ -35,11 +35,32 @@ export async function POST(req: NextRequest) {
       { expiresIn: '1h' }
     );
 
-    return NextResponse.json({
+    // Create a response and set cookies: an httpOnly token and a readable user info cookie
+    const res = NextResponse.json({
       message: 'Login successful',
-      token,
-      role: user.role, // ✅ Send the role in response
+      role: user.role,
+      name: user.name,
     });
+
+    // httpOnly token cookie (not accessible from JS)
+    res.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60, // 1 hour
+    });
+
+    // Non-httpOnly user info cookie (safe to read on client for UI routing; contains no secret)
+    res.cookies.set('user', encodeURIComponent(JSON.stringify({ name: user.name, role: user.role })), {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60,
+    });
+
+    return res;
   } catch (error) {
     console.error('Login Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -26,6 +26,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
+        credentials: 'include', // ensure browser accepts cookies set by the server
       });
 
       const data = await res.json();
@@ -36,8 +37,7 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem('token', data.token);
-
+      // server sets httpOnly `token` cookie and a readable `user` cookie
       if (data.role === 'doctor') {
         router.push('/doctorProfile');
       } else {
