@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { CountdownProvider } from './context/CountdownContext';
+import { UserProvider } from './context/UserContext';
 
 
 export const metadata: Metadata = {
@@ -23,8 +24,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <CountdownProvider >
-                      {children}
+        <CountdownProvider>
+          <UserProvider>
+            {children}
+          </UserProvider>
         </CountdownProvider>
       </body>
     </html>

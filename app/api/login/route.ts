@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { signAccessToken, signRefreshToken } from '../../../lib/auth';
 import mongoose from 'mongoose';
 import User from '../../../lib/models/User'; // Adjust path if needed
 import dbConnect from '../../../lib/db';
@@ -29,11 +30,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
     }
 
-    const token = jwt.sign(
-      { name: user.name, role: user.role },
-      SECRET_KEY,
-      { expiresIn: '1h' }
-    );
+    const accessToken = signAccessToken({ name: user.name, role: user.role });
+    const refreshToken = signRefreshToken({ name: user.name, role: user.role });
 
     // Create a response and set cookies: an httpOnly token and a readable user info cookie
     const res = NextResponse.json({
@@ -42,13 +40,22 @@ export async function POST(req: NextRequest) {
       name: user.name,
     });
 
-    // httpOnly token cookie (not accessible from JS)
-    res.cookies.set('token', token, {
+    // httpOnly access token cookie (short-lived)
+    res.cookies.set('token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 15 * 60, // 15 minutes
+    });
+
+    // httpOnly refresh token cookie (longer-lived)
+    res.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api', // restrict refresh usage to API routes
+      maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
     // Non-httpOnly user info cookie (safe to read on client for UI routing; contains no secret)
