@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import apiFetch from '../../lib/apiClient';
 
 type User = { name: string; role: string } | null;
@@ -16,6 +17,7 @@ export function useUser() {
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchMe() {
@@ -39,7 +41,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
     setUser(null);
-    // optional: redirect handled by caller
+    // redirect to homepage after logout
+    router.push('/');
   }
 
   return (

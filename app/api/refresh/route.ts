@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRefreshToken, signAccessToken } from '../../../lib/auth';
+import { verifyRefreshToken, signAccessToken, signRefreshToken } from '../../../lib/auth';
+import dbConnect from '../../../lib/db';
+import User from '../../../lib/models/User';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,7 +12,20 @@ export async function GET(req: NextRequest) {
 
     const payload: any = verifyRefreshToken(refreshToken);
 
+    await dbConnect();
+
+    // Ensure refresh token exists for the user (not revoked)
+    const user = await User.findOne({ name: payload.name, refreshToken: refreshToken });
+    if (!user) {
+      return NextResponse.json({ error: 'Refresh token revoked or not found' }, { status: 401 });
+    }
+
+    // Rotate refresh token: issue a new one and persist
     const newAccess = signAccessToken({ name: payload.name, role: payload.role });
+    const newRefresh = signRefreshToken({ name: payload.name, role: payload.role });
+
+    user.refreshToken = newRefresh;
+    await user.save();
 
     const res = NextResponse.json({ message: 'Token refreshed', name: payload.name, role: payload.role });
 
@@ -20,6 +35,14 @@ export async function GET(req: NextRequest) {
       sameSite: 'lax',
       path: '/',
       maxAge: 15 * 60,
+    });
+
+    res.cookies.set('refreshToken', newRefresh, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api',
+      maxAge: 7 * 24 * 60 * 60,
     });
 
     return res;

@@ -58,6 +58,14 @@ export async function POST(req: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
+    // Persist refresh token for revocation/rotation
+    try {
+      user.refreshToken = refreshToken;
+      await user.save();
+    } catch (saveErr) {
+      console.error('Failed to save refresh token for user', saveErr);
+    }
+
     // Non-httpOnly user info cookie (safe to read on client for UI routing; contains no secret)
     res.cookies.set('user', encodeURIComponent(JSON.stringify({ name: user.name, role: user.role })), {
       httpOnly: false,
