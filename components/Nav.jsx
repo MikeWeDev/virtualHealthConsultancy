@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useUser } from '../app/context/UserContext';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useUser();
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl transition-all">
@@ -40,12 +42,24 @@ export default function Navbar() {
 
         {/* Desktop Call to Action */}
         <div className="hidden items-center gap-3 md:flex">
-          <Link 
-            href="/patient" 
-            className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
-          >
-            Patient Login
-          </Link>
+          {user ? (
+            <>
+              <span className="text-sm font-medium text-slate-200">{user.name}</span>
+              <button
+                onClick={() => logout()}
+                className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/patient"
+              className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
+            >
+              Patient Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Toggle Button */}

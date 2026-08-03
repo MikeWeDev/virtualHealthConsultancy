@@ -3,7 +3,11 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type User = { name: string; role: string } | null;
 
-const UserContext = createContext<{ user: User; setUser: (u: User) => void }>({ user: null, setUser: () => {} });
+const UserContext = createContext<{
+  user: User;
+  setUser: (u: User) => void;
+  logout: () => Promise<void>;
+}>({ user: null, setUser: () => {}, logout: async () => {} });
 
 export function useUser() {
   return useContext(UserContext);
@@ -27,5 +31,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     fetchMe();
   }, []);
 
-  return <UserContext.Provider value={{ user, setUser }}>{children}</UserContext.Provider>;
+  async function logout() {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    } catch (err) {
+      // ignore
+    }
+    setUser(null);
+    // optional: redirect handled by caller
+  }
+
+  return (
+    <UserContext.Provider value={{ user, setUser, logout }}>{children}</UserContext.Provider>
+  );
 }
