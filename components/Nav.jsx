@@ -7,6 +7,8 @@ import { useUser } from '../app/context/UserContext';
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout } = useUser();
+  const dashboardHref = user?.role === 'doctor' ? '/doctorProfile' : '/patient';
+  const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl transition-all">
@@ -44,7 +46,12 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
-              <span className="text-sm font-medium text-slate-200">{user.name}</span>
+              <Link
+                href={dashboardHref}
+                className="text-sm font-medium text-slate-200 transition-colors hover:text-emerald-400"
+              >
+                Hi, {firstName}
+              </Link>
               <button
                 onClick={() => logout()}
                 className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
@@ -54,10 +61,10 @@ export default function Navbar() {
             </>
           ) : (
             <Link
-              href="/patient"
+              href="/"
               className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
             >
-              Patient Login
+              Login
             </Link>
           )}
         </div>
@@ -119,13 +126,23 @@ export default function Navbar() {
               </a>
             </li>
             <li className="pt-2">
-              <Link 
-                href="/patient" 
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
-              >
-                Patient Login
-              </Link>
+              {user ? (
+                <Link
+                  href={dashboardHref}
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                >
+                  Hi, {firstName}
+                </Link>
+              ) : (
+                <Link 
+                  href="/" 
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                >
+                  Login
+                </Link>
+              )}
             </li>
           </ul>
         </nav>

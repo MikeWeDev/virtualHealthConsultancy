@@ -3,9 +3,12 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCountdown } from '../context/CountdownContext';
+import { useUser } from '../context/UserContext';
 
 const Dashboard = () => {
   const { countdown } = useCountdown();
+  const { user } = useUser();
+  const firstName = user?.name?.split(' ')[0] ?? 'Patient';
 
   // Helper to convert seconds to H:M:S
   const formatCountdown = (seconds: number) => {
@@ -18,7 +21,7 @@ const Dashboard = () => {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <header className="bg-white shadow-md p-4 flex justify-between items-center border-b-4 border-gray-300">
-        <h1 className="text-2xl font-bold text-green-600">Welcome to Your Dashboard</h1>
+        <h1 className="text-2xl font-bold text-green-600">Welcome to Your Dashboard, {firstName}</h1>
       </header>
 
       <main className="flex-grow p-6">
@@ -45,7 +48,7 @@ const Dashboard = () => {
             />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Dr. John Doe</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{firstName}</h2>
             <p className="text-gray-600">Your appointment details and more...</p>
           </div>
         </div>

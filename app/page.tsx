@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (data.role === 'doctor') {
         router.push('/doctorProfile');
       } else {
-        router.push('/home');
+        router.push('/patient');
       }
     } catch (err) {
       setError('Something went wrong');
