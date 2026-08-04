@@ -48,9 +48,10 @@ export default function Navbar() {
             <>
               <Link
                 href={dashboardHref}
-                className="text-sm font-medium text-slate-200 transition-colors hover:text-emerald-400"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400"
+                aria-label={`Go to ${user.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
               >
-                Hi, {firstName}
+                {firstName.charAt(0).toUpperCase()}
               </Link>
               <button
                 onClick={() => logout()}
@@ -131,8 +132,9 @@ export default function Navbar() {
                   href={dashboardHref}
                   onClick={() => setMenuOpen(false)}
                   className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  aria-label={`Go to ${user.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
                 >
-                  Hi, {firstName}
+                  {firstName.charAt(0).toUpperCase()}
                 </Link>
               ) : (
                 <Link 
