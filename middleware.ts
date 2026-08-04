@@ -38,7 +38,8 @@ export function middleware(req: NextRequest) {
     console.log('[middleware] token valid');
     return NextResponse.next();
   } catch (err) {
-    console.log('[middleware] token invalid:', err?.message || err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.log('[middleware] token invalid:', errorMessage);
     const loginUrl = new URL('/', req.url);
     loginUrl.pathname = '/';
     return NextResponse.redirect(loginUrl);
