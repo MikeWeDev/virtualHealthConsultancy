@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock } from 'react-icons/fa';
 import apiFetch from '../lib/apiClient';
+import { useUser } from './context/UserContext';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ name: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setUser } = useUser();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,8 +39,13 @@ export default function LoginPage() {
         return;
       }
 
-      // server sets httpOnly `token` cookie and a readable `user` cookie
-      router.push('/home');
+      // update shared auth state and redirect to the correct dashboard
+      setUser({ name: data.name, role: data.role });
+      if (data.role === 'doctor') {
+        router.push('/doctorProfile');
+      } else {
+        router.push('/patient');
+      }
     } catch (err) {
       setError('Something went wrong');
     } finally {
