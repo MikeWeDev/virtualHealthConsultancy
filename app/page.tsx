@@ -39,9 +39,9 @@ export default function LoginPage() {
         return;
       }
 
-      // update shared auth state and navigate to the public home page
+      // update shared auth state and redirect to the correct dashboard
       setUser({ name: data.name, role: data.role });
-      window.location.href = '/home';
+      window.location.href = data.role === 'doctor' ? '/doctorProfile' : '/patient';
     } catch (err) {
       setError('Something went wrong');
     } finally {

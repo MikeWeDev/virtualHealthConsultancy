@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '../app/context/UserContext';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, logout } = useUser();
+  const { user, logout, setUser } = useUser();
   const dashboardHref = user?.role === 'doctor' ? '/doctorProfile' : '/patient';
   const firstName = user?.name?.split(' ')[0] || 'User';
+  const userInitial = firstName.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    if (!user) {
+      fetch('/api/me', { credentials: 'include' })
+        .then((res) => {
+          if (!res.ok) throw new Error('Not authenticated');
+          return res.json();
+        })
+        .then((data) => setUser({ name: data.name, role: data.role }))
+        .catch(() => {});
+    }
+  }, [user, setUser]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl transition-all">
@@ -134,7 +147,7 @@ export default function Navbar() {
                   className="block rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
                   aria-label={`Go to ${user.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
                 >
-                  {firstName.charAt(0).toUpperCase()}
+                  {userInitial}
                 </Link>
               ) : (
                 <Link 
