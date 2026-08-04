@@ -12,14 +12,53 @@ export default function Navbar() {
   const userInitial = firstName.charAt(0).toUpperCase();
 
   useEffect(() => {
-    if (!user) {
+    console.log('[Nav] useEffect user:', user);
+    if (!user && typeof document !== 'undefined') {
+      const cookiePair = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith('user='));
+
+      console.log('[Nav] user cookiePair:', cookiePair);
+
+      if (cookiePair) {
+        try {
+          let cookieValue = cookiePair.split('=')[1];
+          try {
+            cookieValue = decodeURIComponent(cookieValue);
+          } catch (decodeErr) {
+            console.warn('[Nav] first decode failed', decodeErr);
+          }
+
+          let parsedUser = JSON.parse(cookieValue);
+          console.log('[Nav] parsed user cookie:', parsedUser);
+          if (!parsedUser?.name || !parsedUser?.role) {
+            cookieValue = decodeURIComponent(cookieValue);
+            parsedUser = JSON.parse(cookieValue);
+            console.log('[Nav] parsed user cookie after second decode:', parsedUser);
+          }
+          if (parsedUser?.name && parsedUser?.role) {
+            setUser({ name: parsedUser.name, role: parsedUser.role });
+            return;
+          }
+        } catch (err) {
+          console.error('[Nav] failed parsing user cookie', err);
+          // fallback to API fetch if cookie parsing fails
+        }
+      }
+
       fetch('/api/me', { credentials: 'include' })
         .then((res) => {
+          console.log('[Nav] /api/me response status:', res.status);
           if (!res.ok) throw new Error('Not authenticated');
           return res.json();
         })
-        .then((data) => setUser({ name: data.name, role: data.role }))
-        .catch(() => {});
+        .then((data) => {
+          console.log('[Nav] /api/me data:', data);
+          setUser({ name: data.name, role: data.role });
+        })
+        .catch((err) => {
+          console.error('[Nav] /api/me fetch failed', err);
+        });
     }
   }, [user, setUser]);
 

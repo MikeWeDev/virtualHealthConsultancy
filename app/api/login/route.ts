@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Non-httpOnly user info cookie (safe to read on client for UI routing; contains no secret)
-    res.cookies.set('user', encodeURIComponent(JSON.stringify({ name: user.name, role: user.role })), {
+    res.cookies.set('user', JSON.stringify({ name: user.name, role: user.role }), {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

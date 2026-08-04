@@ -20,18 +20,59 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchMe() {
+    async function initializeUser() {
+      console.log('[UserContext] initializeUser started');
+      if (typeof document !== 'undefined') {
+        const cookiePair = document.cookie
+          .split('; ')
+          .find((cookie) => cookie.startsWith('user='));
+
+        console.log('[UserContext] cookiePair:', cookiePair);
+
+        if (cookiePair) {
+          try {
+            let cookieValue = cookiePair.split('=')[1];
+            try {
+              cookieValue = decodeURIComponent(cookieValue);
+            } catch (decodeErr) {
+              console.warn('[UserContext] first decode failed', decodeErr);
+            }
+
+            let parsedUser = JSON.parse(cookieValue);
+            console.log('[UserContext] parsed user cookie:', parsedUser);
+            if (!parsedUser?.name || !parsedUser?.role) {
+              cookieValue = decodeURIComponent(cookieValue);
+              parsedUser = JSON.parse(cookieValue);
+              console.log('[UserContext] parsed user cookie after second decode:', parsedUser);
+            }
+            if (parsedUser?.name && parsedUser?.role) {
+              setUser({ name: parsedUser.name, role: parsedUser.role });
+              return;
+            }
+          } catch (err) {
+            console.error('[UserContext] failed parsing user cookie', err);
+            // ignore and fall back to API fetch
+          }
+        }
+      }
+
       try {
         const res = await apiFetch('/api/me');
-        if (!res.ok) return setUser(null);
+        console.log('[UserContext] /api/me response status:', res.status);
+        if (!res.ok) {
+          setUser(null);
+          return;
+        }
         const data = await res.json();
+        console.log('[UserContext] /api/me data:', data);
         setUser({ name: data.name, role: data.role });
       } catch (err) {
+        console.error('[UserContext] /api/me fetch failed', err);
         setUser(null);
       }
     }
 
-    fetchMe();
+    initializeUser();
   }, []);
 
   async function logout() {

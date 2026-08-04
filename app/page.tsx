@@ -33,6 +33,9 @@ export default function LoginPage() {
 
       const data = await res.json();
 
+      console.log('[LoginPage] api/login response status:', res.status);
+      console.log('[LoginPage] api/login body:', data);
+
       if (!res.ok) {
         setError(data.error || 'Login failed');
         setLoading(false);
@@ -41,6 +44,7 @@ export default function LoginPage() {
 
       // update shared auth state and redirect to the public home page
       setUser({ name: data.name, role: data.role });
+      console.log('[LoginPage] setUser:', { name: data.name, role: data.role });
       router.replace('/home');
       window.location.replace('/home');
       return;
