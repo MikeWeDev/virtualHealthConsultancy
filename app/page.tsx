@@ -38,11 +38,7 @@ export default function LoginPage() {
       }
 
       // server sets httpOnly `token` cookie and a readable `user` cookie
-      if (data.role === 'doctor') {
-        router.push('/doctorProfile');
-      } else {
-        router.push('/patient');
-      }
+      router.push('/home');
     } catch (err) {
       setError('Something went wrong');
     } finally {
