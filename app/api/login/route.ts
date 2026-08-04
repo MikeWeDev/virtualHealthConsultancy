@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
     const accessToken = signAccessToken({ name: user.name, role: user.role });
     const refreshToken = signRefreshToken({ name: user.name, role: user.role });
 
+    console.log('[api/login] setting token and refreshToken cookies for user', user.name);
     // Create a response and set cookies: an httpOnly token and a readable user info cookie
     const res = NextResponse.json({
       message: 'Login successful',

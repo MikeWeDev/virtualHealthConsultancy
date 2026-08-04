@@ -8,8 +8,9 @@ type User = { name: string; role: string } | null;
 const UserContext = createContext<{
   user: User;
   setUser: (u: User) => void;
+  initialized: boolean;
   logout: () => Promise<void>;
-}>({ user: null, setUser: () => {}, logout: async () => {} });
+}>({ user: null, setUser: () => {}, initialized: false, logout: async () => {} });
 
 export function useUser() {
   return useContext(UserContext);
@@ -17,45 +18,12 @@ export function useUser() {
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
+  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     async function initializeUser() {
       console.log('[UserContext] initializeUser started');
-      if (typeof document !== 'undefined') {
-        const cookiePair = document.cookie
-          .split('; ')
-          .find((cookie) => cookie.startsWith('user='));
-
-        console.log('[UserContext] cookiePair:', cookiePair);
-
-        if (cookiePair) {
-          try {
-            let cookieValue = cookiePair.split('=')[1];
-            try {
-              cookieValue = decodeURIComponent(cookieValue);
-            } catch (decodeErr) {
-              console.warn('[UserContext] first decode failed', decodeErr);
-            }
-
-            let parsedUser = JSON.parse(cookieValue);
-            console.log('[UserContext] parsed user cookie:', parsedUser);
-            if (!parsedUser?.name || !parsedUser?.role) {
-              cookieValue = decodeURIComponent(cookieValue);
-              parsedUser = JSON.parse(cookieValue);
-              console.log('[UserContext] parsed user cookie after second decode:', parsedUser);
-            }
-            if (parsedUser?.name && parsedUser?.role) {
-              setUser({ name: parsedUser.name, role: parsedUser.role });
-              return;
-            }
-          } catch (err) {
-            console.error('[UserContext] failed parsing user cookie', err);
-            // ignore and fall back to API fetch
-          }
-        }
-      }
-
       try {
         const res = await apiFetch('/api/me');
         console.log('[UserContext] /api/me response status:', res.status);
@@ -69,6 +37,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error('[UserContext] /api/me fetch failed', err);
         setUser(null);
+      } finally {
+        setInitialized(true);
       }
     }
 
@@ -87,6 +57,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ user, setUser, initialized, logout }}>{children}</UserContext.Provider>
   );
 }

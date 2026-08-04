@@ -1,13 +1,28 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
 
 const DoctorDashboard = () => {
+  const router = useRouter();
   const { countdown } = useCountdown();
-  const { user } = useUser();
+  const { user, initialized } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Doctor';
+
+  console.log('[DoctorDashboard] initialized:', initialized, 'user:', user);
+
+  useEffect(() => {
+    if (initialized && !user) {
+      router.push('/');
+    }
+  }, [initialized, user, router]);
+
+  if (!initialized) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   // Helper to convert seconds to H:M:S
   const formatCountdown = (seconds: number) => {

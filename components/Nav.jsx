@@ -7,7 +7,7 @@ import { useUser } from '../app/context/UserContext';
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, logout, setUser } = useUser();
-  const dashboardHref = user?.role === 'doctor' ? '/doctorProfile' : '/patient';
+  const dashboardHref = user ? (user.role === 'doctor' ? '/doctorProfile' : '/patient') : '/';
   const firstName = user?.name?.split(' ')[0] || 'User';
   const userInitial = firstName.charAt(0).toUpperCase();
 
@@ -100,10 +100,16 @@ export default function Navbar() {
             <>
               <Link
                 href={dashboardHref}
+                onClick={(event) => {
+                  if (!user) {
+                    event.preventDefault();
+                    return;
+                  }
+                }}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400"
-                aria-label={`Go to ${user.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
+                aria-label={`Go to ${user?.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
               >
-                {firstName.charAt(0).toUpperCase()}
+                {userInitial}
               </Link>
               <button
                 onClick={() => logout()}
