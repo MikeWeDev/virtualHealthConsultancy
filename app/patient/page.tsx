@@ -1,10 +1,11 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
+import { getBookingsForPatient, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -27,6 +28,14 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  const patientBookings = useMemo(() => {
+    if (!user || user.role !== 'patient') return [];
+    return getBookingsForPatient(user.name);
+  }, [user]);
+
+  const upcomingBooking = useMemo(() => getUpcomingBooking(patientBookings), [patientBookings]);
+  const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
 
   const formatCountdown = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -77,9 +86,11 @@ const Dashboard = () => {
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Next Visit</p>
                 <p className="mt-4 text-3xl font-bold text-slate-950">
-                  {countdown !== null ? formatCountdown(countdown) : 'No active booking'}
+                  {upcomingBooking ? formatCountdown(countdown) : 'No active booking'}
                 </p>
-                <p className="mt-2 text-sm text-slate-500">Countdown to your next appointment</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {upcomingBooking ? nextAppointment : 'Book a consultation to see details'}
+                </p>
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Messages</p>
@@ -105,22 +116,28 @@ const Dashboard = () => {
                   <h2 className="mt-3 text-2xl font-bold text-slate-950">Appointment overview</h2>
                 </div>
                 <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  {countdown !== null ? 'Active booking' : 'No booking yet'}
+                  {upcomingBooking ? 'Active booking' : 'No booking yet'}
                 </div>
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Doctor</p>
-                  <p className="mt-2 font-semibold text-slate-900">Dr. Amanda Lee</p>
+                  <p className="mt-2 font-semibold text-slate-900">
+                    {upcomingBooking ? upcomingBooking.doctorName : 'No doctor selected'}
+                  </p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
-                  <p className="text-sm text-slate-500">Location</p>
-                  <p className="mt-2 font-semibold text-slate-900">Virtual consult</p>
+                  <p className="text-sm text-slate-500">Appointment</p>
+                  <p className="mt-2 font-semibold text-slate-900">
+                    {upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : 'Not scheduled'}
+                  </p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Status</p>
-                  <p className="mt-2 font-semibold text-slate-900">{countdown !== null ? 'Confirmed' : 'Awaiting booking'}</p>
+                  <p className="mt-2 font-semibold text-slate-900">
+                    {upcomingBooking ? 'Confirmed' : 'Awaiting booking'}
+                  </p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Instructions</p>

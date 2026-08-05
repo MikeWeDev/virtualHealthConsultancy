@@ -42,9 +42,9 @@ export default function LoginPage() {
         return;
       }
 
-      // update shared auth state and redirect to the public home page
       setUser({ name: data.name, role: data.role });
-      router.push('/home');
+      const destination = data.role === 'doctor' ? '/doctorProfile' : '/patient';
+      router.push(destination);
       return;
     } catch (err) {
       setError('Something went wrong');

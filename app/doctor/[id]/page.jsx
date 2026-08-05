@@ -61,9 +61,9 @@ export default async function DoctorDetailPage({ params }) {
 
           {/* Booking Section */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
-           <BookingSection />
+            <BookingSection doctor={doctor} />
           </div>
-                       <div className="space-y-10 mt-24">
+          <div className="space-y-10 mt-24">
                         {[
                           {
                             title: "MESSAGE",

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '../context/UserContext';
 import { 
   Star, 
   Search, 
@@ -99,6 +101,14 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const router = useRouter();
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (user?.role === 'doctor') {
+      router.push('/doctorProfile');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     const timer = setInterval(() => {

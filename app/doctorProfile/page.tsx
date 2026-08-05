@@ -1,22 +1,34 @@
 "use client";
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
+import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
 
 const DoctorDashboard = () => {
   const router = useRouter();
-  const { countdown } = useCountdown();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Doctor';
+  const [bookingCountdown, setBookingCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (initialized && !user) {
       router.push('/');
     }
+    if (initialized && user?.role === 'patient') {
+      router.push('/patient');
+    }
   }, [initialized, user, router]);
+
+  const doctorBookings = useMemo(() => {
+    if (!user || user.role !== 'doctor') return [];
+    return getBookingsForDoctor({ doctorName: user.name });
+  }, [user]);
+
+  const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);
+  const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
+
 
   if (!initialized) {
     return (
@@ -76,7 +88,7 @@ const DoctorDashboard = () => {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Today&apos;s Consults</p>
-                <p className="mt-4 text-3xl font-bold text-slate-950">5</p>
+                <p className="mt-4 text-3xl font-bold text-slate-950">{doctorBookings.length}</p>
                 <p className="mt-2 text-sm text-slate-500">Confirmed virtual visits</p>
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
@@ -103,18 +115,18 @@ const DoctorDashboard = () => {
                   <h2 className="mt-3 text-2xl font-bold text-slate-950">Upcoming appointments</h2>
                 </div>
                 <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  {countdown !== null ? 'Next booking active' : 'No active booking'}
+                  {upcomingBooking ? 'Next booking active' : 'No active booking'}
                 </div>
               </div>
 
               <div className="mt-6 grid gap-4">
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Next patient</p>
-                  <p className="mt-2 font-semibold text-slate-950">Joseph Carter</p>
+                  <p className="mt-2 font-semibold text-slate-950">{upcomingBooking?.patientName || 'No upcoming patient'}</p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Consult time</p>
-                  <p className="mt-2 font-semibold text-slate-950">10:30 AM, April 23</p>
+                  <p className="mt-2 font-semibold text-slate-950">{nextAppointment || 'Not scheduled'}</p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Mode</p>

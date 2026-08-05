@@ -1,17 +1,25 @@
 'use client';
 import { useState } from 'react';
 import { useCountdown } from '../../app/context/CountdownContext';
+import { saveBooking } from '../../lib/bookingStorage';
+import { useUser } from '../../app/context/UserContext';
 
-const BookingSection = () => {
+const BookingSection = ({ doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const { countdown, setCountdownTarget, clearCountdown } = useCountdown();
+  const { countdown, setCountdownTarget } = useCountdown();
+  const { user } = useUser();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!date || !time) {
       alert('Please select both date and time.');
+      return;
+    }
+
+    if (!user || user.role !== 'patient') {
+      alert('Only patients can book consultations.');
       return;
     }
 
@@ -24,7 +32,17 @@ const BookingSection = () => {
       return;
     }
 
+    const booking = {
+      doctorId: doctor.id,
+      doctorName: doctor.Name,
+      patientName: user.name,
+      appointmentTime: selectedDateTime.toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    saveBooking(booking);
     setCountdownTarget(selectedDateTime);
+    alert('Booking saved. It will appear on your patient and doctor dashboards.');
   };
 
   const formatTime = (seconds: number) => {
