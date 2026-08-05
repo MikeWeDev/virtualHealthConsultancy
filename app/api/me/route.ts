@@ -4,14 +4,14 @@ import { verifyAccessToken } from '../../../lib/auth';
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get('token')?.value;
-    console.log('[api/me] token present:', Boolean(token));
+ //   console.log('[api/me] token present:', Boolean(token));
     if (!token) {
-      console.log('[api/me] no token found, returning 401');
+   //   console.log('[api/me] no token found, returning 401');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const payload: any = verifyAccessToken(token);
-    console.log('[api/me] verified payload:', payload);
+ //   console.log('[api/me] verified payload:', payload);
 
     return NextResponse.json({ name: payload.name, role: payload.role });
   } catch (err) {

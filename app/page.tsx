@@ -44,10 +44,7 @@ export default function LoginPage() {
 
       // update shared auth state and redirect to the public home page
       setUser({ name: data.name, role: data.role });
-      console.log('[LoginPage] setUser:', { name: data.name, role: data.role });
-      console.log('[LoginPage] document.cookie after login:', document.cookie);
-      const destination = '/home';
-      window.location.href = destination;
+      router.push('/home');
       return;
     } catch (err) {
       setError('Something went wrong');
