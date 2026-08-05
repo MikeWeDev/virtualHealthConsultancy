@@ -12,53 +12,44 @@ export default function Navbar() {
   const userInitial = firstName.charAt(0).toUpperCase();
 
   useEffect(() => {
-    console.log('[Nav] useEffect user:', user);
-    if (!user && typeof document !== 'undefined') {
+    if (!user && typeof window !== 'undefined') {
       const cookiePair = document.cookie
         .split('; ')
         .find((cookie) => cookie.startsWith('user='));
 
-      console.log('[Nav] user cookiePair:', cookiePair);
-
       if (cookiePair) {
         try {
-          let cookieValue = cookiePair.split('=')[1];
-          try {
-            cookieValue = decodeURIComponent(cookieValue);
-          } catch (decodeErr) {
-            console.warn('[Nav] first decode failed', decodeErr);
-          }
-
-          let parsedUser = JSON.parse(cookieValue);
-          console.log('[Nav] parsed user cookie:', parsedUser);
-          if (!parsedUser?.name || !parsedUser?.role) {
-            cookieValue = decodeURIComponent(cookieValue);
-            parsedUser = JSON.parse(cookieValue);
-            console.log('[Nav] parsed user cookie after second decode:', parsedUser);
-          }
+          const cookieValue = cookiePair.split('=')[1];
+          const parsedUser = JSON.parse(decodeURIComponent(cookieValue));
           if (parsedUser?.name && parsedUser?.role) {
             setUser({ name: parsedUser.name, role: parsedUser.role });
             return;
           }
         } catch (err) {
-          console.error('[Nav] failed parsing user cookie', err);
-          // fallback to API fetch if cookie parsing fails
+          console.warn('[Nav] failed parsing user cookie, falling back to API', err);
         }
       }
 
-      fetch('/api/me', { credentials: 'include' })
-        .then((res) => {
-          console.log('[Nav] /api/me response status:', res.status);
-          if (!res.ok) throw new Error('Not authenticated');
-          return res.json();
-        })
-        .then((data) => {
-          console.log('[Nav] /api/me data:', data);
-          setUser({ name: data.name, role: data.role });
-        })
-        .catch((err) => {
-          console.error('[Nav] /api/me fetch failed', err);
-        });
+      async function fetchUser() {
+        try {
+          const res = await fetch('/api/me', { credentials: 'include' });
+          if (!res.ok) {
+            setUser(null);
+            return;
+          }
+          const data = await res.json();
+          if (data?.name && data?.role) {
+            setUser({ name: data.name, role: data.role });
+          } else {
+            setUser(null);
+          }
+        } catch (err) {
+          console.warn('[Nav] /api/me fetch failed', err);
+          setUser(null);
+        }
+      }
+
+      fetchUser();
     }
   }, [user, setUser]);
 
