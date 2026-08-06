@@ -6,16 +6,13 @@ import dbConnect from '../../../lib/db'; // Your custom DB connection
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, password, role } = await req.json();
+    const { name, password } = await req.json();
 
-    if (!name || !password || !role) {
-      return NextResponse.json({ error: 'Missing name, password, or role' }, { status: 400 });
+    if (!name || !password) {
+      return NextResponse.json({ error: 'Missing name or password' }, { status: 400 });
     }
 
-    // Validate role
-    if (!['doctor', 'patient'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-    }
+    const role = 'patient';
 
     await dbConnect();
 

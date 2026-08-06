@@ -126,6 +126,24 @@ export default function LoginPage() {
             {loading ? 'Logging in...' : 'Login'}
           </motion.button>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={createGuestAccount}
+              disabled={loading}
+              className="w-full rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+            >
+              Continue as Guest
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/doctor-login')}
+              className="w-full rounded-full bg-emerald-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-emerald-400"
+            >
+              Login as Doctor
+            </button>
+          </div>
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -133,10 +151,10 @@ export default function LoginPage() {
             className="text-center mt-4"
           >
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Need a patient account?{' '}
               <Link href="/register">
                 <button className="text-indigo-600 font-semibold hover:underline">
-                  Register
+                  Create one here
                 </button>
               </Link>
             </p>

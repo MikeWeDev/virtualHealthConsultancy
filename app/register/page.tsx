@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaUserMd } from 'react-icons/fa';
+import { FaUser, FaLock } from 'react-icons/fa';
 import apiFetch from '../../lib/apiClient';
 
 export default function RegisterPage() {
@@ -59,7 +59,7 @@ export default function RegisterPage() {
           transition={{ delay: 0.2, duration: 0.4 }}
           className="text-4xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500 mb-6"
         >
-          Create Account
+          Create Patient Account
         </motion.h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,18 +89,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="relative">
-            <FaUserMd className="absolute left-3 top-3 text-gray-400" />
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-full focus:outline-none focus:border-green-400 transition"
-            >
-              <option value="patient">Patient</option>
-              <option value="doctor">Doctor</option>
-            </select>
-          </div>
+          <input type="hidden" name="role" value="patient" />
 
           {message && (
             <motion.p
