@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock } from 'react-icons/fa';
 import apiFetch from '../lib/apiClient';
-import { useUser } from './context/UserContext';
+import { useUser, createUserSession } from './context/UserContext';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ name: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { setUser } = useUser();
+  const { user, initialized, setUser } = useUser();
+
+  useEffect(() => {
+    if (!initialized) return;
+    if (user?.role === 'doctor') {
+      router.push('/doctorProfile');
+    } else if (user?.role === 'patient') {
+      router.push('/patient');
+    }
+  }, [initialized, user, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,7 +51,7 @@ export default function LoginPage() {
         return;
       }
 
-      setUser({ name: data.name, role: data.role });
+      setUser(createUserSession({ name: data.name, role: data.role }));
       const destination = data.role === 'doctor' ? '/doctorProfile' : '/patient';
       router.push(destination);
       return;

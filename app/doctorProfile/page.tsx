@@ -23,7 +23,7 @@ const DoctorDashboard = () => {
 
   const doctorBookings = useMemo(() => {
     if (!user || user.role !== 'doctor') return [];
-    return getBookingsForDoctor({ doctorName: user.name });
+    return getBookingsForDoctor({ doctorName: user.name, doctorId: user.doctorId });
   }, [user]);
 
   const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);

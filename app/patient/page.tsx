@@ -14,8 +14,13 @@ const Dashboard = () => {
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
 
   useEffect(() => {
-    if (initialized && !user) {
+    if (!initialized) return;
+    if (!user) {
       router.push('/');
+      return;
+    }
+    if (user.role === 'doctor') {
+      router.push('/doctorProfile');
     }
   }, [initialized, user, router]);
 

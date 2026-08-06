@@ -2,8 +2,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import apiFetch from '../../lib/apiClient';
+import newDatas from '../doctor/ProductPage';
 
-type User = { name: string; role: string } | null;
+type User = { name: string; role: string; doctorId?: number } | null;
 
 const UserContext = createContext<{
   user: User;
@@ -11,6 +12,29 @@ const UserContext = createContext<{
   initialized: boolean;
   logout: () => Promise<void>;
 }>({ user: null, setUser: () => {}, initialized: false, logout: async () => {} });
+
+function normalizeName(value = '') {
+  return value
+    .toString()
+    .trim()
+    .replace(/^dr\.??\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+export function getDoctorIdForName(name: string) {
+  const normalized = normalizeName(name);
+  const doctor = newDatas.find((item) => normalizeName(item.Name) === normalized);
+  return doctor?.id;
+}
+
+export function createUserSession(data: { name: string; role: string }) {
+  return {
+    name: data.name,
+    role: data.role,
+    doctorId: data.role === 'doctor' ? getDoctorIdForName(data.name) : undefined,
+  };
+}
 
 export function useUser() {
   return useContext(UserContext);
@@ -33,7 +57,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
         const data = await res.json();
         console.log('[UserContext] /api/me data:', data);
-        setUser({ name: data.name, role: data.role });
+        setUser(createUserSession({ name: data.name, role: data.role }));
       } catch (err) {
         console.error('[UserContext] /api/me fetch failed', err);
         setUser(null);

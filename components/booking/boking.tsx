@@ -4,7 +4,12 @@ import { useCountdown } from '../../app/context/CountdownContext';
 import { saveBooking } from '../../lib/bookingStorage';
 import { useUser } from '../../app/context/UserContext';
 
-const BookingSection = ({ doctor }) => {
+type Doctor = {
+  id: number;
+  Name: string;
+};
+
+const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const { countdown, setCountdownTarget } = useCountdown();
@@ -33,6 +38,10 @@ const BookingSection = ({ doctor }) => {
     }
 
     const booking = {
+      id:
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `booking-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       doctorId: doctor.id,
       doctorName: doctor.Name,
       patientName: user.name,
