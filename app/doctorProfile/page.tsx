@@ -23,7 +23,7 @@ function parseUserCookie() {
 
 const DoctorDashboard = () => {
   const router = useRouter();
-  const { countdown } = useCountdown();
+  const { countdown, storedBookingId, setCountdownTarget, clearCountdown } = useCountdown();
   const { user, initialized, logout } = useUser();
   const doctor = useMemo(() => {
     if (!user?.doctorId) return null;
@@ -32,6 +32,22 @@ const DoctorDashboard = () => {
   const firstName = doctor?.Name?.split(' ')[1] || user?.name?.split(' ')[0] || 'Doctor';
   const doctorSpecialty = doctor?.type || 'Primary Care Specialist';
   const doctorImage = doctor?.img || '/home/photo_3_2025-04-22_22-05-16.jpg';
+
+  const doctorBookings = useMemo(() => {
+    if (!user || user.role !== 'doctor') return [];
+    return getBookingsForDoctor({ doctorName: user.name, doctorId: user.doctorId });
+  }, [user]);
+
+  const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);
+  const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
+
+  useEffect(() => {
+    if (upcomingBooking) {
+      setCountdownTarget(new Date(upcomingBooking.appointmentTime), upcomingBooking.id);
+    } else {
+      clearCountdown();
+    }
+  }, [upcomingBooking, setCountdownTarget, clearCountdown]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -44,14 +60,6 @@ const DoctorDashboard = () => {
       router.push('/patient');
     }
   }, [initialized, user, router]);
-
-  const doctorBookings = useMemo(() => {
-    if (!user || user.role !== 'doctor') return [];
-    return getBookingsForDoctor({ doctorName: user.name, doctorId: user.doctorId });
-  }, [user]);
-
-  const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);
-  const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
 
   if (!initialized) {
     return (
@@ -150,7 +158,7 @@ const DoctorDashboard = () => {
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Consult time</p>
                   <p className="mt-2 font-semibold text-slate-950">{nextAppointment || 'Not scheduled'}</p>
-                  {upcomingBooking && countdown !== null && (
+                  {upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null && (
                     <p className="mt-2 text-sm font-semibold text-emerald-700">{formatCountdown(countdown)} remaining</p>
                   )}
                 </div>

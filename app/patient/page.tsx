@@ -9,9 +9,24 @@ import { getBookingsForPatient, getUpcomingBooking, formatBookingTime } from '..
 
 const Dashboard = () => {
   const router = useRouter();
-  const { countdown } = useCountdown();
+  const { countdown, storedBookingId, setCountdownTarget, clearCountdown } = useCountdown();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
+
+  const patientBookings = useMemo(() => {
+    if (!user || user.role !== 'patient') return [];
+    return getBookingsForPatient(user.name);
+  }, [user]);
+
+  const upcomingBooking = useMemo(() => getUpcomingBooking(patientBookings), [patientBookings]);
+
+  useEffect(() => {
+    if (upcomingBooking) {
+      setCountdownTarget(new Date(upcomingBooking.appointmentTime), upcomingBooking.id);
+    } else {
+      clearCountdown();
+    }
+  }, [upcomingBooking, setCountdownTarget, clearCountdown]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -34,12 +49,6 @@ const Dashboard = () => {
     );
   }
 
-  const patientBookings = useMemo(() => {
-    if (!user || user.role !== 'patient') return [];
-    return getBookingsForPatient(user.name);
-  }, [user]);
-
-  const upcomingBooking = useMemo(() => getUpcomingBooking(patientBookings), [patientBookings]);
   const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
 
   const formatCountdown = (seconds: number) => {
@@ -91,7 +100,7 @@ const Dashboard = () => {
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Next Visit</p>
                 <p className="mt-4 text-3xl font-bold text-slate-950">
-                  {upcomingBooking ? formatCountdown(countdown) : 'No active booking'}
+                  {upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null ? formatCountdown(countdown) : 'No active booking'}
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
                   {upcomingBooking ? nextAppointment : 'Book a consultation to see details'}
@@ -191,7 +200,7 @@ const Dashboard = () => {
                 </div>
                 <div className="grid gap-2 rounded-3xl bg-white/10 p-4">
                   <span className="font-semibold text-white">Next check-in</span>
-                  <span>{countdown !== null ? formatCountdown(countdown) : 'No scheduled visit'}</span>
+                  <span>{upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null ? formatCountdown(countdown) : 'No scheduled visit'}</span>
                 </div>
                 <div className="grid gap-2 rounded-3xl bg-white/10 p-4">
                   <span className="font-semibold text-white">Support</span>

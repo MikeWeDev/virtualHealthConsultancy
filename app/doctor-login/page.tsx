@@ -10,7 +10,7 @@ export default function DoctorLoginPage() {
   const router = useRouter();
   const { setUser } = useUser();
 
-  const handleDoctorSelect = (doctor) => {
+  const handleDoctorSelect = (doctor: any) => {
     const session = createUserSession({ name: doctor.Name, role: 'doctor', doctorId: doctor.id });
     setUser(session);
     document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;

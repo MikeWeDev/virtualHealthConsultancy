@@ -50,7 +50,7 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     };
 
     saveBooking(booking);
-    setCountdownTarget(selectedDateTime);
+    setCountdownTarget(selectedDateTime, booking.id);
     alert('Booking saved. It will appear on your patient and doctor dashboards.');
   };
 
