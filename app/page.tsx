@@ -42,7 +42,7 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      console.log('[LoginPage] api/login response status:', res.status);
+      console.log('[LoginPage] api/login response:', res.status);
       console.log('[LoginPage] api/login body:', data);
 
       if (!res.ok) {
