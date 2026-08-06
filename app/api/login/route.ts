@@ -5,6 +5,22 @@ import { signAccessToken, signRefreshToken } from '../../../lib/auth';
 import mongoose from 'mongoose';
 import User from '../../../lib/models/User'; // Adjust path if needed
 import dbConnect from '../../../lib/db';
+import doctorData from '../../doctor/ProductPage';
+
+function normalizeName(value = '') {
+  return value
+    .toString()
+    .trim()
+    .replace(/^dr\.??\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function getDoctorIdForName(name: string) {
+  const normalized = normalizeName(name);
+  const doctor = doctorData.find((item) => normalizeName(item.Name) === normalized);
+  return doctor?.id;
+}
 
 const SECRET_KEY = process.env.SECRET_KEY || 'your_secret_key';
 
@@ -68,13 +84,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Non-httpOnly user info cookie (safe to read on client for UI routing; contains no secret)
-    res.cookies.set('user', JSON.stringify({ name: user.name, role: user.role }), {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60,
-    });
+    res.cookies.set(
+      'user',
+      JSON.stringify({ name: user.name, role: user.role, doctorId: getDoctorIdForName(user.name) }),
+      {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      }
+    );
 
     return res;
   } catch (error) {

@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRefreshToken, signAccessToken, signRefreshToken } from '../../../lib/auth';
 import dbConnect from '../../../lib/db';
 import User from '../../../lib/models/User';
+import doctorData from '../../doctor/ProductPage';
+
+function normalizeName(value = '') {
+  return value
+    .toString()
+    .trim()
+    .replace(/^dr\.??\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function getDoctorIdForName(name: string) {
+  const normalized = normalizeName(name);
+  const doctor = doctorData.find((item) => normalizeName(item.Name) === normalized);
+  return doctor?.id;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -44,6 +60,18 @@ export async function GET(req: NextRequest) {
       path: '/',
       maxAge: 7 * 24 * 60 * 60,
     });
+
+    res.cookies.set(
+      'user',
+      JSON.stringify({ name: payload.name, role: payload.role, doctorId: getDoctorIdForName(payload.name) }),
+      {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      }
+    );
 
     return res;
   } catch (err) {

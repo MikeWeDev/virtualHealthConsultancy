@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../context/UserContext';
 import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
+import doctorData from '../doctor/ProductPage';
 
 const DoctorDashboard = () => {
   const router = useRouter();
@@ -190,8 +191,8 @@ const DoctorDashboard = () => {
               <h3 className="text-lg font-semibold text-slate-950">Your profile</h3>
               <div className="mt-5 flex items-center gap-4">
                 <Image
-                  src="/home/photo_3_2025-04-22_22-05-16.jpg"
-                  alt="Doctor profile"
+                  src={doctorImage}
+                  alt={`Dr. ${firstName}`}
                   width={80}
                   height={80}
                   className="rounded-3xl object-cover"
