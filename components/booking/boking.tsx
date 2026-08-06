@@ -12,7 +12,7 @@ type Doctor = {
 const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const { countdown, setCountdownTarget } = useCountdown();
+  const { countdown, setCountdownTarget, storedBookingId } = useCountdown();
   const { user } = useUser();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -50,7 +50,10 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     };
 
     saveBooking(booking);
-    setCountdownTarget(selectedDateTime, booking.id);
+    // Only set the global countdown if no booking is currently tracked
+    if (!storedBookingId) {
+      setCountdownTarget(selectedDateTime, booking.id);
+    }
     alert('Booking saved. It will appear on your patient and doctor dashboards.');
   };
 

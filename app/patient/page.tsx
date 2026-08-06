@@ -9,7 +9,7 @@ import { getBookingsForPatient, getUpcomingBooking, formatBookingTime } from '..
 
 const Dashboard = () => {
   const router = useRouter();
-  const { countdown, storedBookingId, setCountdownTarget, clearCountdown } = useCountdown();
+  const { countdown, storedBookingId, setCountdownTarget } = useCountdown();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
 
@@ -21,12 +21,13 @@ const Dashboard = () => {
   const upcomingBooking = useMemo(() => getUpcomingBooking(patientBookings), [patientBookings]);
 
   useEffect(() => {
-    if (upcomingBooking) {
+    if (!upcomingBooking) return;
+    // Only initialize the global countdown if none is tracked,
+    // or if it's already tracking this upcoming booking.
+    if (!storedBookingId || storedBookingId === upcomingBooking.id) {
       setCountdownTarget(new Date(upcomingBooking.appointmentTime), upcomingBooking.id);
-    } else {
-      clearCountdown();
     }
-  }, [upcomingBooking, setCountdownTarget, clearCountdown]);
+  }, [upcomingBooking, storedBookingId, setCountdownTarget]);
 
   useEffect(() => {
     if (!initialized) return;
@@ -144,7 +145,11 @@ const Dashboard = () => {
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Appointment</p>
                   <p className="mt-2 font-semibold text-slate-900">
-                    {upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : 'Not scheduled'}
+                    {upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null
+                      ? formatCountdown(countdown)
+                      : upcomingBooking
+                      ? formatBookingTime(upcomingBooking.appointmentTime)
+                      : 'Not scheduled'}
                   </p>
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
