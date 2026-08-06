@@ -40,6 +40,20 @@ export function useUser() {
   return useContext(UserContext);
 }
 
+function parseUserCookie() {
+  if (typeof window === 'undefined') return null;
+  const cookiePair = document.cookie.split('; ').find((cookie) => cookie.startsWith('user='));
+  if (!cookiePair) return null;
+
+  try {
+    const cookieValue = decodeURIComponent(cookiePair.split('=')[1]);
+    return JSON.parse(cookieValue);
+  } catch (err) {
+    console.warn('[UserContext] failed to parse user cookie', err);
+    return null;
+  }
+}
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [initialized, setInitialized] = useState(false);
@@ -47,12 +61,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function initializeUser() {
+      const fallbackUser = parseUserCookie();
       console.log('[UserContext] initializeUser started');
       try {
         const res = await apiFetch('/api/me');
         console.log('[UserContext] /api/me response status:', res.status);
         if (!res.ok) {
-          setUser(null);
+          if (fallbackUser?.name && fallbackUser?.role) {
+            setUser(createUserSession({ name: fallbackUser.name, role: fallbackUser.role }));
+          } else {
+            setUser(null);
+          }
           return;
         }
         const data = await res.json();
@@ -60,7 +79,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setUser(createUserSession({ name: data.name, role: data.role }));
       } catch (err) {
         console.error('[UserContext] /api/me fetch failed', err);
-        setUser(null);
+        if (fallbackUser?.name && fallbackUser?.role) {
+          setUser(createUserSession({ name: fallbackUser.name, role: fallbackUser.role }));
+        } else {
+          setUser(null);
+        }
       } finally {
         setInitialized(true);
       }

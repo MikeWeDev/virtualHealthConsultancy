@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      path: '/api', // restrict refresh usage to API routes
+      path: '/',
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
 
