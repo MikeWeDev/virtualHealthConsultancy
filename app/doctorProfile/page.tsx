@@ -1,8 +1,9 @@
 "use client";
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
 import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
 import doctorData from '../doctor/ProductPage';
@@ -22,8 +23,8 @@ function parseUserCookie() {
 
 const DoctorDashboard = () => {
   const router = useRouter();
+  const { countdown } = useCountdown();
   const { user, initialized, logout } = useUser();
-  const [bookingCountdown, setBookingCountdown] = useState<number | null>(null);
   const doctor = useMemo(() => {
     if (!user?.doctorId) return null;
     return doctorData.find((item) => item.id === user.doctorId) || null;
@@ -51,7 +52,6 @@ const DoctorDashboard = () => {
 
   const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);
   const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
-
 
   if (!initialized) {
     return (
@@ -150,6 +150,9 @@ const DoctorDashboard = () => {
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Consult time</p>
                   <p className="mt-2 font-semibold text-slate-950">{nextAppointment || 'Not scheduled'}</p>
+                  {upcomingBooking && countdown !== null && (
+                    <p className="mt-2 text-sm font-semibold text-emerald-700">{formatCountdown(countdown)} remaining</p>
+                  )}
                 </div>
                 <div className="rounded-3xl bg-slate-50 p-5">
                   <p className="text-sm text-slate-500">Mode</p>
