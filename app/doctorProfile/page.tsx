@@ -57,7 +57,7 @@ const DoctorDashboard = () => {
       return;
     }
     if (user?.role === 'patient') {
-      router.push('/patient');
+      router.push('/home');
     }
   }, [initialized, user, router]);
 
