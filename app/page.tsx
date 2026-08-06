@@ -20,7 +20,7 @@ export default function LoginPage() {
     if (user?.role === 'doctor') {
       router.push('/doctorProfile');
     } else if (user?.role === 'patient') {
-      router.push('/patient');
+      router.push('/home');
     }
   }, [initialized, user, router]);
 
@@ -53,7 +53,7 @@ export default function LoginPage() {
 
       setUser(createUserSession({ name: data.name, role: data.role }));
       document.cookie = `user=${encodeURIComponent(JSON.stringify(createUserSession({ name: data.name, role: data.role })))}; path=/; max-age=${60 * 60 * 24 * 7}`;
-      const destination = data.role === 'doctor' ? '/doctorProfile' : '/patient';
+      const destination = data.role === 'doctor' ? '/doctorProfile' : '/home';
       router.push(destination);
       return;
     } catch (err) {
@@ -99,7 +99,7 @@ export default function LoginPage() {
       const session = createUserSession({ name: data.name, role: data.role });
       setUser(session);
       document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;
-      router.push('/patient');
+      router.push('/home');
     } catch (err) {
       setError('Failed to create guest account.');
       console.error(err);
