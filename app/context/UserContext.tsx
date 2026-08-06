@@ -28,11 +28,14 @@ export function getDoctorIdForName(name: string) {
   return doctor?.id;
 }
 
-export function createUserSession(data: { name: string; role: string }) {
+export function createUserSession(data: { name: string; role: string; doctorId?: number }) {
   return {
     name: data.name,
     role: data.role,
-    doctorId: data.role === 'doctor' ? getDoctorIdForName(data.name) : undefined,
+    doctorId:
+      data.role === 'doctor'
+        ? data.doctorId ?? getDoctorIdForName(data.name)
+        : undefined,
   };
 }
 
