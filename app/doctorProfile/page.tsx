@@ -9,8 +9,14 @@ import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../
 const DoctorDashboard = () => {
   const router = useRouter();
   const { user, initialized, logout } = useUser();
-  const firstName = user?.name?.split(' ')[0] ?? 'Doctor';
   const [bookingCountdown, setBookingCountdown] = useState<number | null>(null);
+  const doctor = useMemo(() => {
+    if (!user?.doctorId) return null;
+    return doctorData.find((item) => item.id === user.doctorId) || null;
+  }, [user]);
+  const firstName = doctor?.Name?.split(' ')[1] || user?.name?.split(' ')[0] || 'Doctor';
+  const doctorSpecialty = doctor?.type || 'Primary Care Specialist';
+  const doctorImage = doctor?.img || '/home/photo_3_2025-04-22_22-05-16.jpg';
 
   useEffect(() => {
     if (initialized && !user) {
@@ -191,8 +197,8 @@ const DoctorDashboard = () => {
                   className="rounded-3xl object-cover"
                 />
                 <div>
-                  <p className="text-lg font-semibold text-slate-900">Dr. {firstName}</p>
-                  <p className="text-sm text-slate-500">Primary care specialist</p>
+                  <p className="text-lg font-semibold text-slate-900">Dr. {doctor?.Name || firstName}</p>
+                  <p className="text-sm text-slate-500">{doctorSpecialty}</p>
                 </div>
               </div>
               <div className="mt-6 grid gap-3 text-sm text-slate-600">

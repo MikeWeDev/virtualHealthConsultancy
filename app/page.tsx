@@ -52,11 +52,57 @@ export default function LoginPage() {
       }
 
       setUser(createUserSession({ name: data.name, role: data.role }));
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(createUserSession({ name: data.name, role: data.role })))}; path=/; max-age=${60 * 60 * 24 * 7}`;
       const destination = data.role === 'doctor' ? '/doctorProfile' : '/patient';
       router.push(destination);
       return;
     } catch (err) {
       setError('Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createGuestAccount = async () => {
+    setError('');
+    setLoading(true);
+
+    const guestName = `Guest-${Date.now()}`;
+    const guestPassword = Math.random().toString(36).slice(2, 10);
+
+    try {
+      const registerRes = await apiFetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: guestName, password: guestPassword }),
+      });
+
+      if (!registerRes.ok) {
+        const data = await registerRes.json();
+        setError(data.error || 'Guest account creation failed');
+        return;
+      }
+
+      const loginRes = await apiFetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: guestName, password: guestPassword }),
+      });
+
+      if (!loginRes.ok) {
+        const data = await loginRes.json();
+        setError(data.error || 'Guest login failed');
+        return;
+      }
+
+      const data = await loginRes.json();
+      const session = createUserSession({ name: data.name, role: data.role });
+      setUser(session);
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      router.push('/patient');
+    } catch (err) {
+      setError('Failed to create guest account.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
