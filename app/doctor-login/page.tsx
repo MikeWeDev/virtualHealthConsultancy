@@ -44,7 +44,7 @@ export default function DoctorLoginPage() {
                   src={doctor.img}
                   alt={doctor.Name}
                   fill
-                  className="object-cover"
+                  className="object-fill"
                 />
               </div>
               <div className="space-y-4 p-6">
