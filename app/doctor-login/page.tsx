@@ -14,7 +14,9 @@ export default function DoctorLoginPage() {
     const session = createUserSession({ name: doctor.Name, role: 'doctor', doctorId: doctor.id });
     setUser(session);
     document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;
-    router.push('/doctorProfile');
+    setTimeout(() => {
+      router.push('/doctorProfile');
+    }, 0);
   };
 
   return (

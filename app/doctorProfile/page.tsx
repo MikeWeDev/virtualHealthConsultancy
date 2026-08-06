@@ -7,6 +7,19 @@ import { useUser } from '../context/UserContext';
 import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
 import doctorData from '../doctor/ProductPage';
 
+function parseUserCookie() {
+  if (typeof window === 'undefined') return null;
+  const cookiePair = document.cookie.split('; ').find((cookie) => cookie.startsWith('user='));
+  if (!cookiePair) return null;
+
+  try {
+    const cookieValue = decodeURIComponent(cookiePair.split('=')[1]);
+    return JSON.parse(cookieValue);
+  } catch {
+    return null;
+  }
+}
+
 const DoctorDashboard = () => {
   const router = useRouter();
   const { user, initialized, logout } = useUser();
@@ -20,10 +33,13 @@ const DoctorDashboard = () => {
   const doctorImage = doctor?.img || '/home/photo_3_2025-04-22_22-05-16.jpg';
 
   useEffect(() => {
-    if (initialized && !user) {
+    if (!initialized) return;
+    const cookieUser = parseUserCookie();
+    if (!user && !cookieUser) {
       router.push('/');
+      return;
     }
-    if (initialized && user?.role === 'patient') {
+    if (user?.role === 'patient') {
       router.push('/patient');
     }
   }, [initialized, user, router]);
