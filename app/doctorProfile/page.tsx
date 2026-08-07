@@ -32,11 +32,13 @@ const DoctorDashboard = () => {
   const doctorSpecialty = doctor?.type || 'Primary Care Specialist';
   const doctorImage = doctor?.img || '/home/photo_3_2025-04-22_22-05-16.jpg';
 
-  const doctorBookings = useMemo(() => {
+const doctorBookings = useMemo(() => {
     if (!user || user.role !== 'doctor' || user.doctorId == null) return [];
-    return getBookingsForDoctor({ doctorId: user.doctorId });
-  }, [user]);
-
+    return getBookingsForDoctor({ 
+      doctorId: user.doctorId, 
+      doctorName: user.name || doctor?.Name || '' 
+    });
+  }, [user, doctor]);
   const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);
   const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
 
