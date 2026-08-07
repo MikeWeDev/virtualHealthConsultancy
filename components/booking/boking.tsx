@@ -18,14 +18,14 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     if (!user || user.role !== 'patient') return null;
     const bookings = getBookingsForPatient(user.name);
     const doctorBookings = bookings
-      .map((booking) => ({
+      .map((booking: any) => ({
         ...booking,
         appointmentTime: new Date(booking.appointmentTime),
       }))
-      .filter((booking) =>
+      .filter((booking: any) =>
         booking.doctorId === doctor.id && booking.appointmentTime.getTime() > Date.now()
       )
-      .sort((a, b) => a.appointmentTime.getTime() - b.appointmentTime.getTime());
+      .sort((a: any, b: any) => a.appointmentTime.getTime() - b.appointmentTime.getTime());
     return doctorBookings.length > 0 ? doctorBookings[0] : null;
   }, [user, doctor.id]);
 
