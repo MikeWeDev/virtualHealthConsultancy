@@ -19,12 +19,12 @@ const Dashboard = () => {
   const activeBookings = useMemo(
     () =>
       patientBookings
-        .map((booking) => ({
+        .map((booking: any) => ({
           ...booking,
           appointmentTime: new Date(booking.appointmentTime),
         }))
-        .filter((booking) => booking.appointmentTime.getTime() > Date.now())
-        .sort((a, b) => a.appointmentTime.getTime() - b.appointmentTime.getTime()),
+        .filter((booking: any) => booking.appointmentTime.getTime() > Date.now())
+        .sort((a: any, b: any) => a.appointmentTime.getTime() - b.appointmentTime.getTime()),
     [patientBookings]
   );
 
@@ -148,7 +148,7 @@ const Dashboard = () => {
 
               <div className="mt-6 space-y-4">
                 {activeBookings.length > 0 ? (
-                  activeBookings.map((booking) => (
+                  activeBookings.map((booking: any) => (
                     <div key={booking.id} className="rounded-3xl bg-slate-50 p-5">
                       <p className="text-sm text-slate-500">Doctor</p>
                       <p className="mt-2 font-semibold text-slate-900">{booking.doctorName}</p>
