@@ -1,7 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useCountdown } from '../../app/context/CountdownContext';
-import { saveBooking } from '../../lib/bookingStorage';
+import { useEffect, useMemo, useState } from 'react';
+import { saveBooking, getBookingsForPatient } from '../../lib/bookingStorage';
 import { useUser } from '../../app/context/UserContext';
 
 type Doctor = {
@@ -12,8 +11,23 @@ type Doctor = {
 const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const { countdown, setCountdownTarget, storedBookingId } = useCountdown();
+  const [localCountdown, setLocalCountdown] = useState<number | null>(null);
   const { user } = useUser();
+
+  const currentDoctorBooking = useMemo(() => {
+    if (!user || user.role !== 'patient') return null;
+    const bookings = getBookingsForPatient(user.name);
+    const doctorBookings = bookings
+      .map((booking) => ({
+        ...booking,
+        appointmentTime: new Date(booking.appointmentTime),
+      }))
+      .filter((booking) =>
+        booking.doctorId === doctor.id && booking.appointmentTime.getTime() > Date.now()
+      )
+      .sort((a, b) => a.appointmentTime.getTime() - b.appointmentTime.getTime());
+    return doctorBookings.length > 0 ? doctorBookings[0] : null;
+  }, [user, doctor.id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,10 +64,6 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     };
 
     saveBooking(booking);
-    // Only set the global countdown if no booking is currently tracked
-    if (!storedBookingId) {
-      setCountdownTarget(selectedDateTime, booking.id);
-    }
     alert('Booking saved. It will appear on your patient and doctor dashboards.');
   };
 
@@ -65,6 +75,24 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
       .toString()
       .padStart(2, '0')}`;
   };
+
+  useEffect(() => {
+    if (!currentDoctorBooking) {
+      setLocalCountdown(null);
+      return;
+    }
+
+    const updateLocalCountdown = () => {
+      const now = new Date();
+      const target = new Date(currentDoctorBooking.appointmentTime);
+      const diff = Math.floor((target.getTime() - now.getTime()) / 1000);
+      setLocalCountdown(diff > 0 ? diff : 0);
+    };
+
+    updateLocalCountdown();
+    const intervalId = setInterval(updateLocalCountdown, 1000);
+    return () => clearInterval(intervalId);
+  }, [currentDoctorBooking]);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
@@ -106,10 +134,10 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
           </button>
         </form>
 
-        {countdown !== null && (
+        {currentDoctorBooking && localCountdown !== null && (
           <div className="mt-4 text-center font-semibold text-lg text-blue-800">
-            {countdown > 0 ? (
-              <>Time left: {formatTime(countdown)}</>
+            {localCountdown > 0 ? (
+              <>Time left: {formatTime(localCountdown)}</>
             ) : (
               <span className="text-green-600">✅ Call the doctor now</span>
             )}
