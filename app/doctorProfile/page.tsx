@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
 import { getBookingsForDoctor, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
 import doctorData from '../doctor/ProductPage';
@@ -23,7 +22,6 @@ function parseUserCookie() {
 
 const DoctorDashboard = () => {
   const router = useRouter();
-  const { /* countdown, storedBookingId, setCountdownTarget, clearCountdown */ } = useCountdown();
   const [localCountdown, setLocalCountdown] = useState<number | null>(null);
   const { user, initialized, logout } = useUser();
   const doctor = useMemo(() => {
@@ -35,8 +33,8 @@ const DoctorDashboard = () => {
   const doctorImage = doctor?.img || '/home/photo_3_2025-04-22_22-05-16.jpg';
 
   const doctorBookings = useMemo(() => {
-    if (!user || user.role !== 'doctor') return [];
-    return getBookingsForDoctor({ doctorName: user.name, doctorId: user.doctorId });
+    if (!user || user.role !== 'doctor' || user.doctorId == null) return [];
+    return getBookingsForDoctor({ doctorId: user.doctorId });
   }, [user]);
 
   const upcomingBooking = useMemo(() => getUpcomingBooking(doctorBookings), [doctorBookings]);

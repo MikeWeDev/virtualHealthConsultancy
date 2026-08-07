@@ -1,15 +1,13 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCountdown } from '../context/CountdownContext';
 import { useUser } from '../context/UserContext';
-import { getBookingsForPatient, getUpcomingBooking, formatBookingTime } from '../../lib/bookingStorage';
+import { getBookingsForPatient, formatBookingTime } from '../../lib/bookingStorage';
 
 const Dashboard = () => {
   const router = useRouter();
-  const { countdown, storedBookingId, setCountdownTarget } = useCountdown();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
 
@@ -18,16 +16,24 @@ const Dashboard = () => {
     return getBookingsForPatient(user.name);
   }, [user]);
 
-  const upcomingBooking = useMemo(() => getUpcomingBooking(patientBookings), [patientBookings]);
+  const activeBookings = useMemo(
+    () =>
+      patientBookings
+        .map((booking) => ({
+          ...booking,
+          appointmentTime: new Date(booking.appointmentTime),
+        }))
+        .filter((booking) => booking.appointmentTime.getTime() > Date.now())
+        .sort((a, b) => a.appointmentTime.getTime() - b.appointmentTime.getTime()),
+    [patientBookings]
+  );
+
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    if (!upcomingBooking) return;
-    // Only initialize the global countdown if none is tracked,
-    // or if it's already tracking this upcoming booking.
-    if (!storedBookingId || storedBookingId === upcomingBooking.id) {
-      setCountdownTarget(new Date(upcomingBooking.appointmentTime), upcomingBooking.id);
-    }
-  }, [upcomingBooking, storedBookingId, setCountdownTarget]);
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!initialized) return;
@@ -50,13 +56,18 @@ const Dashboard = () => {
     );
   }
 
-  const nextAppointment = upcomingBooking ? formatBookingTime(upcomingBooking.appointmentTime) : null;
+  const nextAppointment = activeBookings.length > 0 ? formatBookingTime(activeBookings[0].appointmentTime) : null;
 
   const formatCountdown = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
     return `${h}h ${m}m ${s}s`;
+  };
+
+  const formatDayCountdown = (appointmentTime: Date) => {
+    const diff = Math.max(0, Math.floor((appointmentTime.getTime() - now.getTime()) / 1000));
+    return formatCountdown(diff);
   };
 
   return (
@@ -101,10 +112,10 @@ const Dashboard = () => {
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Next Visit</p>
                 <p className="mt-4 text-3xl font-bold text-slate-950">
-                  {upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null ? formatCountdown(countdown) : 'No active booking'}
+                  {activeBookings.length > 0 ? formatDayCountdown(activeBookings[0].appointmentTime) : 'No active booking'}
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                  {upcomingBooking ? nextAppointment : 'Book a consultation to see details'}
+                  {activeBookings.length > 0 ? nextAppointment : 'Book a consultation to get started'}
                 </p>
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
@@ -131,37 +142,28 @@ const Dashboard = () => {
                   <h2 className="mt-3 text-2xl font-bold text-slate-950">Appointment overview</h2>
                 </div>
                 <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  {upcomingBooking ? 'Active booking' : 'No booking yet'}
+                  {activeBookings.length > 0 ? 'Active bookings' : 'No booking yet'}
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-3xl bg-slate-50 p-5">
-                  <p className="text-sm text-slate-500">Doctor</p>
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {upcomingBooking ? upcomingBooking.doctorName : 'No doctor selected'}
-                  </p>
-                </div>
-                <div className="rounded-3xl bg-slate-50 p-5">
-                  <p className="text-sm text-slate-500">Appointment</p>
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null
-                      ? formatCountdown(countdown)
-                      : upcomingBooking
-                      ? formatBookingTime(upcomingBooking.appointmentTime)
-                      : 'Not scheduled'}
-                  </p>
-                </div>
-                <div className="rounded-3xl bg-slate-50 p-5">
-                  <p className="text-sm text-slate-500">Status</p>
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {upcomingBooking ? 'Confirmed' : 'Awaiting booking'}
-                  </p>
-                </div>
-                <div className="rounded-3xl bg-slate-50 p-5">
-                  <p className="text-sm text-slate-500">Instructions</p>
-                  <p className="mt-2 font-semibold text-slate-900">Bring your medical notes</p>
-                </div>
+              <div className="mt-6 space-y-4">
+                {activeBookings.length > 0 ? (
+                  activeBookings.map((booking) => (
+                    <div key={booking.id} className="rounded-3xl bg-slate-50 p-5">
+                      <p className="text-sm text-slate-500">Doctor</p>
+                      <p className="mt-2 font-semibold text-slate-900">{booking.doctorName}</p>
+                      <p className="text-sm text-slate-500 mt-3">Appointment</p>
+                      <p className="mt-2 font-semibold text-slate-900">{formatBookingTime(booking.appointmentTime)}</p>
+                      <p className="text-sm text-slate-500 mt-3">Countdown</p>
+                      <p className="mt-2 font-semibold text-emerald-700">{formatDayCountdown(booking.appointmentTime)}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm text-slate-500">No active bookings</p>
+                    <p className="mt-2 font-semibold text-slate-900">Book a consultation to get started.</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -205,7 +207,7 @@ const Dashboard = () => {
                 </div>
                 <div className="grid gap-2 rounded-3xl bg-white/10 p-4">
                   <span className="font-semibold text-white">Next check-in</span>
-                  <span>{upcomingBooking && storedBookingId === upcomingBooking.id && countdown !== null ? formatCountdown(countdown) : 'No scheduled visit'}</span>
+                  <span>{activeBookings.length > 0 ? formatDayCountdown(activeBookings[0].appointmentTime) : 'No scheduled visit'}</span>
                 </div>
                 <div className="grid gap-2 rounded-3xl bg-white/10 p-4">
                   <span className="font-semibold text-white">Support</span>
