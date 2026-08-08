@@ -1,30 +1,43 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../context/UserContext';
 import { getBookingsForPatient, formatBookingTime } from '../../lib/bookingStorage';
+
+type Booking = {
+  id: string;
+  doctorId: number;
+  doctorName: string;
+  patientName: string;
+  appointmentTime: string | Date;
+  createdAt?: string;
+};
+
+type FormattedBooking = Omit<Booking, 'appointmentTime'> & {
+  appointmentTime: Date;
+};
 
 const Dashboard = () => {
   const router = useRouter();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
 
-  const patientBookings = useMemo(() => {
+  const patientBookings = useMemo<Booking[]>(() => {
     if (!user || user.role !== 'patient') return [];
     return getBookingsForPatient(user.name);
   }, [user]);
 
-  const activeBookings = useMemo(
+  const activeBookings = useMemo<FormattedBooking[]>(
     () =>
       patientBookings
-        .map((booking: any) => ({
+        .map((booking) => ({
           ...booking,
           appointmentTime: new Date(booking.appointmentTime),
         }))
-        .filter((booking: any) => booking.appointmentTime.getTime() > Date.now())
-        .sort((a: any, b: any) => a.appointmentTime.getTime() - b.appointmentTime.getTime()),
+        .filter((booking) => booking.appointmentTime.getTime() > Date.now())
+        .sort((a, b) => a.appointmentTime.getTime() - b.appointmentTime.getTime()),
     [patientBookings]
   );
 
@@ -46,29 +59,33 @@ const Dashboard = () => {
     }
   }, [initialized, user, router]);
 
+  const formatCountdown = useCallback((seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}h ${m}m ${s}s`;
+  }, []);
+
+  const formatDayCountdown = useCallback(
+    (appointmentTime: Date) => {
+      const diff = Math.max(0, Math.floor((appointmentTime.getTime() - now.getTime()) / 1000));
+      return formatCountdown(diff);
+    },
+    [now, formatCountdown]
+  );
+
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
-        <div className="rounded-3xl border border-slate-200 bg-white px-8 py-10 shadow-xl text-slate-800">
-          Loading your dashboard...
+        <div className="rounded-3xl border border-slate-200 bg-white px-8 py-10 shadow-xl text-slate-800 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+          <span>Loading your dashboard...</span>
         </div>
       </div>
     );
   }
 
   const nextAppointment = activeBookings.length > 0 ? formatBookingTime(activeBookings[0].appointmentTime) : null;
-
-  const formatCountdown = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h}h ${m}m ${s}s`;
-  };
-
-  const formatDayCountdown = (appointmentTime: Date) => {
-    const diff = Math.max(0, Math.floor((appointmentTime.getTime() - now.getTime()) / 1000));
-    return formatCountdown(diff);
-  };
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -142,20 +159,20 @@ const Dashboard = () => {
                   <h2 className="mt-3 text-2xl font-bold text-slate-950">Appointment overview</h2>
                 </div>
                 <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                  {activeBookings.length > 0 ? 'Active bookings' : 'No booking yet'}
+                  {activeBookings.length > 0 ? `${activeBookings.length} Active Booking${activeBookings.length > 1 ? 's' : ''}` : 'No booking yet'}
                 </div>
               </div>
 
               <div className="mt-6 space-y-4">
                 {activeBookings.length > 0 ? (
-                  activeBookings.map((booking: any) => (
-                    <div key={booking.id} className="rounded-3xl bg-slate-50 p-5">
-                      <p className="text-sm text-slate-500">Doctor</p>
-                      <p className="mt-2 font-semibold text-slate-900">{booking.doctorName}</p>
-                      <p className="text-sm text-slate-500 mt-3">Appointment</p>
-                      <p className="mt-2 font-semibold text-slate-900">{formatBookingTime(booking.appointmentTime)}</p>
-                      <p className="text-sm text-slate-500 mt-3">Countdown</p>
-                      <p className="mt-2 font-semibold text-emerald-700">{formatDayCountdown(booking.appointmentTime)}</p>
+                  activeBookings.map((booking) => (
+                    <div key={booking.id} className="rounded-3xl bg-slate-50 p-5 border border-slate-100">
+                      <p className="text-sm text-slate-500 font-medium">Doctor</p>
+                      <p className="mt-1 font-semibold text-slate-900">{booking.doctorName}</p>
+                      <p className="text-sm text-slate-500 mt-3 font-medium">Appointment</p>
+                      <p className="mt-1 font-semibold text-slate-900">{formatBookingTime(booking.appointmentTime)}</p>
+                      <p className="text-sm text-slate-500 mt-3 font-medium">Countdown</p>
+                      <p className="mt-1 font-mono font-semibold text-emerald-700">{formatDayCountdown(booking.appointmentTime)}</p>
                     </div>
                   ))
                 ) : (
