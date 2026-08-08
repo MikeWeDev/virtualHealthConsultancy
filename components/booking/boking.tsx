@@ -17,6 +17,12 @@ type Booking = {
   createdAt: string;
 };
 
+const QUICK_TIME_SLOTS = [
+  { label: 'Morning (09:00 AM)', time: '09:00' },
+  { label: 'Afternoon (02:00 PM)', time: '14:00' },
+  { label: 'Evening (05:00 PM)', time: '17:00' },
+];
+
 function useCountdown(targetIsoDate: string | null) {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
@@ -117,15 +123,28 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
       .padStart(2, '0')}`;
   }, []);
 
+  const formattedAppointmentDate = useMemo(() => {
+    if (!currentDoctorBooking) return '';
+    return new Date(currentDoctorBooking.appointmentTime).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }, [currentDoctorBooking]);
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8 border border-gray-100">
-      <div className="p-6 space-y-3">
-        <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation with Dr. {doctor.Name}</h2>
+    <div className="bg-white rounded-xl shadow-md overflow-hidden mt-8 border border-gray-100">
+      <div className="p-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-blue-900">Book a Consultation</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Scheduling with Dr. {doctor.Name}</p>
+        </div>
 
         {feedback && (
           <div
             className={`p-3 rounded-lg text-sm font-medium ${
-              feedback.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
+              feedback.type === 'error'
+                ? 'bg-red-50 text-red-700 border border-red-200'
+                : 'bg-green-50 text-green-700 border border-green-200'
             }`}
           >
             {feedback.message}
@@ -134,7 +153,7 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="date" className="block text-gray-600 mb-1 font-medium text-sm">
+            <label htmlFor="date" className="block text-gray-700 mb-1 font-medium text-sm">
               Select Date
             </label>
             <input
@@ -143,14 +162,14 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
               min={minDate}
               required
               aria-label="Select Date"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
 
           <div>
-            <label htmlFor="time" className="block text-gray-600 mb-1 font-medium text-sm">
+            <label htmlFor="time" className="block text-gray-700 mb-1 font-medium text-sm">
               Select Time
             </label>
             <input
@@ -158,28 +177,62 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
               id="time"
               required
               aria-label="Select Time"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               value={time}
               onChange={(e) => setTime(e.target.value)}
             />
+            
+            <div className="mt-2">
+              <span className="text-xs text-gray-500 font-medium">Quick Slots:</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {QUICK_TIME_SLOTS.map((slot) => (
+                  <button
+                    key={slot.time}
+                    type="button"
+                    onClick={() => setTime(slot.time)}
+                    className={`text-xs px-2.5 py-1 rounded-md border transition ${
+                      time === slot.time
+                        ? 'bg-blue-600 text-white border-blue-600 font-medium'
+                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full sm:w-auto bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 disabled:opacity-50 transition duration-300 font-medium"
+            className="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 disabled:opacity-50 transition duration-300 font-medium text-sm"
           >
             {isSubmitting ? 'Booking...' : 'Book Now'}
           </button>
         </form>
 
         {currentDoctorBooking && localCountdown !== null && (
-          <div className="mt-4 text-center font-semibold text-lg text-blue-800 bg-blue-50 p-3 rounded-lg">
-            {localCountdown > 0 ? (
-              <>Time left: {formatTime(localCountdown)}</>
-            ) : (
-              <span className="text-green-600">✅ Call the doctor now</span>
-            )}
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+              <span className="text-xs uppercase tracking-wider text-blue-600 font-bold block mb-1">
+                Upcoming Appointment
+              </span>
+              <p className="text-xs text-gray-600 mb-2">{formattedAppointmentDate}</p>
+              
+              <div className="font-semibold text-lg text-blue-900">
+                {localCountdown > 0 ? (
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span>⏱️ Time left:</span>
+                    <span className="font-mono text-blue-700">{formatTime(localCountdown)}</span>
+                  </div>
+                ) : (
+                  <span className="text-green-600 flex items-center justify-center gap-1">
+                    ✅ Call doctor now
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
