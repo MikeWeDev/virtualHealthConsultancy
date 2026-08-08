@@ -8,24 +8,35 @@ type Doctor = {
   Name: string;
 };
 
+type Booking = {
+  id: string;
+  doctorId: number;
+  doctorName: string;
+  patientName: string;
+  appointmentTime: string;
+  createdAt: string;
+};
+
 const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [localCountdown, setLocalCountdown] = useState<number | null>(null);
   const { user } = useUser();
 
+  const minDate = useMemo(() => new Date().toISOString().split('T')[0], []);
+
   const currentDoctorBooking = useMemo(() => {
     if (!user || user.role !== 'patient') return null;
-    const bookings = getBookingsForPatient(user.name);
+    const bookings: Booking[] = getBookingsForPatient(user.name);
     const doctorBookings = bookings
-      .map((booking: any) => ({
+      .map((booking) => ({
         ...booking,
-        appointmentTime: new Date(booking.appointmentTime),
+        appointmentTimeObj: new Date(booking.appointmentTime),
       }))
-      .filter((booking: any) =>
-        booking.doctorId === doctor.id && booking.appointmentTime.getTime() > Date.now()
+      .filter((booking) =>
+        booking.doctorId === doctor.id && booking.appointmentTimeObj.getTime() > Date.now()
       )
-      .sort((a: any, b: any) => a.appointmentTime.getTime() - b.appointmentTime.getTime());
+      .sort((a, b) => a.appointmentTimeObj.getTime() - b.appointmentTimeObj.getTime());
     return doctorBookings.length > 0 ? doctorBookings[0] : null;
   }, [user, doctor.id]);
 
@@ -51,7 +62,7 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
       return;
     }
 
-    const booking = {
+    const booking: Booking = {
       id:
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
           ? crypto.randomUUID()
@@ -64,6 +75,8 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     };
 
     saveBooking(booking);
+    setDate('');
+    setTime('');
     alert('Booking saved. It will appear on your patient and doctor dashboards.');
   };
 
@@ -95,32 +108,37 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   }, [currentDoctorBooking]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8 border border-gray-100">
       <div className="p-6 space-y-3">
         <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation</h2>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="date" className="block text-gray-600">
+            <label htmlFor="date" className="block text-gray-600 mb-1 font-medium text-sm">
               Select Date
             </label>
             <input
               type="date"
               id="date"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black"
+              min={minDate}
+              required
+              aria-label="Select Date"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
 
           <div>
-            <label htmlFor="time" className="block text-gray-600">
+            <label htmlFor="time" className="block text-gray-600 mb-1 font-medium text-sm">
               Select Time
             </label>
             <input
               type="time"
               id="time"
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black"
+              required
+              aria-label="Select Time"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
               value={time}
               onChange={(e) => setTime(e.target.value)}
             />
@@ -128,14 +146,14 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
 
           <button
             type="submit"
-            className="bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
+            className="w-full sm:w-auto bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300 font-medium"
           >
             Book Now
           </button>
         </form>
 
         {currentDoctorBooking && localCountdown !== null && (
-          <div className="mt-4 text-center font-semibold text-lg text-blue-800">
+          <div className="mt-4 text-center font-semibold text-lg text-blue-800 bg-blue-50 p-3 rounded-lg">
             {localCountdown > 0 ? (
               <>Time left: {formatTime(localCountdown)}</>
             ) : (
