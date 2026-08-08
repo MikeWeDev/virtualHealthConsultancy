@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { saveBooking, getBookingsForPatient } from '../../lib/bookingStorage';
 import { useUser } from '../../app/context/UserContext';
 
@@ -17,12 +17,35 @@ type Booking = {
   createdAt: string;
 };
 
+function useCountdown(targetIsoDate: string | null) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!targetIsoDate) {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const update = () => {
+      const diff = Math.floor((new Date(targetIsoDate).getTime() - Date.now()) / 1000);
+      setSecondsLeft(diff > 0 ? diff : 0);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [targetIsoDate]);
+
+  return secondsLeft;
+}
+
 const BookingSection = ({ doctor }: { doctor: Doctor }) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
-  const [localCountdown, setLocalCountdown] = useState<number | null>(null);
-  const { user } = useUser();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
+  const { user } = useUser();
   const minDate = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const currentDoctorBooking = useMemo(() => {
@@ -40,27 +63,31 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     return doctorBookings.length > 0 ? doctorBookings[0] : null;
   }, [user, doctor.id]);
 
+  const localCountdown = useCountdown(currentDoctorBooking?.appointmentTime || null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFeedback(null);
 
     if (!date || !time) {
-      alert('Please select both date and time.');
+      setFeedback({ type: 'error', message: 'Please select both date and time.' });
       return;
     }
 
     if (!user || user.role !== 'patient') {
-      alert('Only patients can book consultations.');
+      setFeedback({ type: 'error', message: 'Only patients can book consultations.' });
       return;
     }
 
     const selectedDateTime = new Date(`${date}T${time}`);
-    const now = new Date();
+    const diffInSeconds = Math.floor((selectedDateTime.getTime() - Date.now()) / 1000);
 
-    const diffInSeconds = Math.floor((selectedDateTime.getTime() - now.getTime()) / 1000);
     if (diffInSeconds <= 0) {
-      alert('Selected time is in the past. Please choose a future time.');
+      setFeedback({ type: 'error', message: 'Selected time is in the past. Please choose a future time.' });
       return;
     }
+
+    setIsSubmitting(true);
 
     const booking: Booking = {
       id:
@@ -77,40 +104,33 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
     saveBooking(booking);
     setDate('');
     setTime('');
-    alert('Booking saved. It will appear on your patient and doctor dashboards.');
+    setIsSubmitting(false);
+    setFeedback({ type: 'success', message: 'Booking saved successfully! It will appear on your dashboard.' });
   };
 
-  const formatTime = (seconds: number) => {
+  const formatTime = useCallback((seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s
       .toString()
       .padStart(2, '0')}`;
-  };
-
-  useEffect(() => {
-    if (!currentDoctorBooking) {
-      setLocalCountdown(null);
-      return;
-    }
-
-    const updateLocalCountdown = () => {
-      const now = new Date();
-      const target = new Date(currentDoctorBooking.appointmentTime);
-      const diff = Math.floor((target.getTime() - now.getTime()) / 1000);
-      setLocalCountdown(diff > 0 ? diff : 0);
-    };
-
-    updateLocalCountdown();
-    const intervalId = setInterval(updateLocalCountdown, 1000);
-    return () => clearInterval(intervalId);
-  }, [currentDoctorBooking]);
+  }, []);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8 border border-gray-100">
       <div className="p-6 space-y-3">
-        <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation</h2>
+        <h2 className="text-xl font-semibold text-blue-800 mb-2">Book a Consultation with Dr. {doctor.Name}</h2>
+
+        {feedback && (
+          <div
+            className={`p-3 rounded-lg text-sm font-medium ${
+              feedback.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -146,9 +166,10 @@ const BookingSection = ({ doctor }: { doctor: Doctor }) => {
 
           <button
             type="submit"
-            className="w-full sm:w-auto bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 transition duration-300 font-medium"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto bg-blue-500 text-white px-8 py-3 rounded-full shadow-md hover:bg-blue-700 disabled:opacity-50 transition duration-300 font-medium"
           >
-            Book Now
+            {isSubmitting ? 'Booking...' : 'Book Now'}
           </button>
         </form>
 
