@@ -19,10 +19,30 @@ type FormattedBooking = Omit<Booking, 'appointmentTime'> & {
   appointmentTime: Date;
 };
 
+type Reminder = {
+  id: number;
+  text: string;
+  completed: boolean;
+};
+
+const INITIAL_REMINDERS: Reminder[] = [
+  { id: 1, text: 'Drink 8 glasses of water today.', completed: false },
+  { id: 2, text: 'Prepare medication list for tomorrow.', completed: false },
+  { id: 3, text: 'Review your wellness progress.', completed: false },
+];
+
 const Dashboard = () => {
   const router = useRouter();
   const { user, initialized, logout } = useUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Patient';
+
+  const [reminders, setReminders] = useState<Reminder[]>(INITIAL_REMINDERS);
+
+  const toggleReminder = (id: number) => {
+    setReminders((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+    );
+  };
 
   const patientBookings = useMemo<Booking[]>(() => {
     if (!user || user.role !== 'patient') return [];
@@ -86,6 +106,7 @@ const Dashboard = () => {
   }
 
   const nextAppointment = activeBookings.length > 0 ? formatBookingTime(activeBookings[0].appointmentTime) : null;
+  const pendingTasksCount = reminders.filter((r) => !r.completed).length;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -131,7 +152,7 @@ const Dashboard = () => {
                 <p className="mt-4 text-3xl font-bold text-slate-950">
                   {activeBookings.length > 0 ? formatDayCountdown(activeBookings[0].appointmentTime) : 'No active booking'}
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-slate-500 truncate">
                   {activeBookings.length > 0 ? nextAppointment : 'Book a consultation to get started'}
                 </p>
               </div>
@@ -147,8 +168,8 @@ const Dashboard = () => {
               </div>
               <div className="rounded-3xl bg-white p-6 shadow-lg ring-1 ring-slate-200">
                 <p className="text-sm font-medium text-slate-500">Tasks</p>
-                <p className="mt-4 text-3xl font-bold text-slate-950">2</p>
-                <p className="mt-2 text-sm text-slate-500">Action items for today</p>
+                <p className="mt-4 text-3xl font-bold text-slate-950">{pendingTasksCount}</p>
+                <p className="mt-2 text-sm text-slate-500">Action items remaining today</p>
               </div>
             </div>
 
@@ -158,7 +179,8 @@ const Dashboard = () => {
                   <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">My care plan</p>
                   <h2 className="mt-3 text-2xl font-bold text-slate-950">Appointment overview</h2>
                 </div>
-                <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
+                <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {activeBookings.length > 0 ? `${activeBookings.length} Active Booking${activeBookings.length > 1 ? 's' : ''}` : 'No booking yet'}
                 </div>
               </div>
@@ -166,13 +188,34 @@ const Dashboard = () => {
               <div className="mt-6 space-y-4">
                 {activeBookings.length > 0 ? (
                   activeBookings.map((booking) => (
-                    <div key={booking.id} className="rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                      <p className="text-sm text-slate-500 font-medium">Doctor</p>
-                      <p className="mt-1 font-semibold text-slate-900">{booking.doctorName}</p>
-                      <p className="text-sm text-slate-500 mt-3 font-medium">Appointment</p>
-                      <p className="mt-1 font-semibold text-slate-900">{formatBookingTime(booking.appointmentTime)}</p>
-                      <p className="text-sm text-slate-500 mt-3 font-medium">Countdown</p>
-                      <p className="mt-1 font-mono font-semibold text-emerald-700">{formatDayCountdown(booking.appointmentTime)}</p>
+                    <div key={booking.id} className="rounded-3xl bg-slate-50 p-5 border border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Doctor</p>
+                        <p className="mt-0.5 font-bold text-slate-900 text-lg">{booking.doctorName}</p>
+                        <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold mt-3">Scheduled For</p>
+                        <p className="mt-0.5 font-medium text-slate-700 text-sm">{formatBookingTime(booking.appointmentTime)}</p>
+                      </div>
+
+                      <div className="flex flex-col items-start md:items-end justify-between gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-slate-200">
+                        <div className="text-left md:text-right">
+                          <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Countdown</p>
+                          <p className="mt-0.5 font-mono font-bold text-emerald-700 text-lg">{formatDayCountdown(booking.appointmentTime)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/connect/chat/${booking.doctorId}`}
+                            className="rounded-full bg-white border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-100 transition"
+                          >
+                            Message
+                          </Link>
+                          <Link
+                            href={`/connect/videocall/${booking.doctorId}`}
+                            className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+                          >
+                            Call
+                          </Link>
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -197,12 +240,26 @@ const Dashboard = () => {
                   </Link>
                 </div>
               </div>
+
               <div className="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-slate-200">
                 <h3 className="text-lg font-semibold text-slate-950">Health reminders</h3>
                 <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                  <li className="rounded-2xl bg-slate-50 p-4">Drink 8 glasses of water today.</li>
-                  <li className="rounded-2xl bg-slate-50 p-4">Prepare medication list for tomorrow.</li>
-                  <li className="rounded-2xl bg-slate-50 p-4">Review your wellness progress.</li>
+                  {reminders.map((reminder) => (
+                    <li
+                      key={reminder.id}
+                      onClick={() => toggleReminder(reminder.id)}
+                      className={`rounded-2xl p-4 cursor-pointer transition flex items-center justify-between border ${
+                        reminder.completed
+                          ? 'bg-slate-50 border-slate-200 text-slate-400 line-through'
+                          : 'bg-emerald-50/50 border-emerald-100 text-slate-800 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <span>{reminder.text}</span>
+                      <span className="text-xs font-semibold px-2 py-1 rounded-full bg-white border border-slate-200">
+                        {reminder.completed ? '✓ Done' : 'Pending'}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
