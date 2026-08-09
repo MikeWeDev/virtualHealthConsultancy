@@ -24,92 +24,21 @@ export default function VideoCall() {
   const [videoOff, setVideoOff] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!roomId) return;
+ useEffect(() => {
+  if (!roomId) return;
 
-    socket.current = io({ path: '/api/video/socket', transports: ['websocket'], autoConnect: true, reconnection: true });
-    pc.current = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-    });
+  socket.current = io(process.env.NEXT_PUBLIC_API_URL!, {
+    transports: ['websocket'],
+    autoConnect: true,
+    reconnection: true,
+  });
 
-    const createAndSendOffer = async () => {
-      if (!pc.current || !socket.current || offerSent.current) return;
-      const offer = await pc.current.createOffer();
-      await pc.current.setLocalDescription(offer);
-      socket.current.emit('webrtc-signal', { type: 'offer', offer, roomId });
-      offerSent.current = true;
-    };
+  pc.current = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+  });
 
-    pc.current.onicecandidate = event => {
-      if (event.candidate) {
-        console.log('Sending ICE candidate', event.candidate);
-        socket.current!.emit('webrtc-signal', { type: 'candidate', candidate: event.candidate, roomId });
-      }
-    };
-
-    pc.current.ontrack = event => {
-      const remoteStream = remoteStreamRef.current;
-      if (event.streams && event.streams[0]) {
-        remoteStreamRef.current = event.streams[0];
-      } else if (event.track) {
-        remoteStream.addTrack(event.track);
-      }
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStreamRef.current;
-        remoteVideoRef.current.play().catch(err => console.warn('Remote video play failed', err));
-      }
-    };
-
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(stream => {
-        localStream.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-          localVideoRef.current.play().catch(() => {});
-        }
-        stream.getTracks().forEach(track => pc.current!.addTrack(track, stream));
-        socket.current!.emit('join', roomId);
-      })
-      .catch(() => alert('Camera & microphone access are required.'));
-
-    socket.current.on('you-are-initiator', () => {
-      isInitiator.current = true;
-    });
-
-    socket.current.on('user-joined', async () => {
-      if (isInitiator.current) {
-        await createAndSendOffer();
-      }
-    });
-
-    socket.current.on('webrtc-signal', async data => {
-      if (!pc.current) return;
-      if (data.type === 'offer') {
-        await pc.current.setRemoteDescription(data.offer);
-        const answer = await pc.current.createAnswer();
-        await pc.current.setLocalDescription(answer);
-        socket.current!.emit('webrtc-signal', { type: 'answer', answer, roomId });
-      }
-      if (data.type === 'answer') {
-        await pc.current.setRemoteDescription(data.answer);
-      }
-      if (data.type === 'candidate') {
-        await pc.current.addIceCandidate(data.candidate);
-      }
-    });
-
-    socket.current.on('user-left', () => {
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-    });
-
-    return () => {
-      socket.current!.emit('leave', roomId);
-      socket.current!.disconnect();
-      pc.current!.close();
-      localStream.current?.getTracks().forEach(t => t.stop());
-    };
-  }, [roomId]);
+  // ...
+}, [roomId]);
 
   const toggleMute = () => {
     if (localStream.current) {

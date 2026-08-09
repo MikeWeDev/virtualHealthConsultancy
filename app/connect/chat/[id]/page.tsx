@@ -24,13 +24,14 @@ const ChatWindow = () => {
   const [socket, setSocket] = useState<any>(null);
   const [mySocketId, setMySocketId] = useState<string>('');
 
+
+
   useEffect(() => {
-    const socketInstance = io(typeof window !== 'undefined' ? window.location.origin : '/', {
-      path: '/api/socket',
-      autoConnect: false,
-      reconnection: true,
-      timeout: 20000,
-    });
+  const socketInstance = io(process.env.NEXT_PUBLIC_API_URL!, {
+  autoConnect: false,
+  reconnection: true,
+  timeout: 20000,
+});
 
     const handleConnect = () => {
       console.log('Connected:', socketInstance.id);
