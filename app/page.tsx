@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -40,24 +40,34 @@ export default function LoginPage() {
         body: JSON.stringify(form),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        console.warn('[LoginPage] Unable to parse response body as JSON', jsonErr);
+      }
 
-      console.log('[LoginPage] api/login response:', res.status);
-      console.log('[LoginPage] api/login body:', data);
+      console.log('[LoginPage] api/login response status:', res.status);
 
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Login failed. Please check your credentials.');
         setLoading(false);
         return;
       }
 
-      setUser(createUserSession({ name: data.name, role: data.role }));
-      document.cookie = `user=${encodeURIComponent(JSON.stringify(createUserSession({ name: data.name, role: data.role })))}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      const session = createUserSession({ name: data.name, role: data.role });
+      setUser(session);
+
+      // Set client session cookie safely
+      document.cookie = `user=${encodeURIComponent(
+        JSON.stringify(session)
+      )}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
       const destination = data.role === 'doctor' ? '/doctorProfile' : '/home';
       router.push(destination);
-      return;
     } catch (err) {
-      setError('Something went wrong');
+      console.error('[LoginPage] Login network exception:', err);
+      setError('Unable to reach backend server. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -78,8 +88,9 @@ export default function LoginPage() {
       });
 
       if (!registerRes.ok) {
-        const data = await registerRes.json();
-        setError(data.error || 'Guest account creation failed');
+        let regData: any = {};
+        try { regData = await registerRes.json(); } catch (_) {}
+        setError(regData.error || 'Guest account creation failed');
         return;
       }
 
@@ -90,19 +101,24 @@ export default function LoginPage() {
       });
 
       if (!loginRes.ok) {
-        const data = await loginRes.json();
-        setError(data.error || 'Guest login failed');
+        let loginData: any = {};
+        try { loginData = await loginRes.json(); } catch (_) {}
+        setError(loginData.error || 'Guest login failed');
         return;
       }
 
       const data = await loginRes.json();
       const session = createUserSession({ name: data.name, role: data.role });
       setUser(session);
-      document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
+      document.cookie = `user=${encodeURIComponent(
+        JSON.stringify(session)
+      )}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
       router.push('/home');
     } catch (err) {
-      setError('Failed to create guest account.');
-      console.error(err);
+      console.error('[LoginPage] Guest creation failed:', err);
+      setError('Failed to connect to backend for guest setup.');
     } finally {
       setLoading(false);
     }
@@ -156,7 +172,7 @@ export default function LoginPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center text-red-500 text-sm"
+              className="text-center text-red-500 text-sm font-medium"
             >
               {error}
             </motion.p>
@@ -167,7 +183,7 @@ export default function LoginPage() {
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition"
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
           </motion.button>
@@ -177,7 +193,7 @@ export default function LoginPage() {
               type="button"
               onClick={createGuestAccount}
               disabled={loading}
-              className="w-full rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100"
+              className="w-full rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 disabled:opacity-50"
             >
               Continue as Guest
             </button>
@@ -199,9 +215,9 @@ export default function LoginPage() {
             <p className="text-gray-600">
               Need a patient account?{' '}
               <Link href="/register">
-                <button className="text-indigo-600 font-semibold hover:underline">
+                <span className="text-indigo-600 font-semibold hover:underline cursor-pointer">
                   Create one here
-                </button>
+                </span>
               </Link>
             </p>
           </motion.div>
