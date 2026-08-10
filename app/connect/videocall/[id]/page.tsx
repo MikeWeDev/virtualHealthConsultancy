@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -6,80 +5,277 @@ import { io, Socket } from 'socket.io-client';
 import { useRouter, useParams } from 'next/navigation';
 import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiLogOut } from 'react-icons/fi';
 
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://virtua-health-consultancy-server.onrender.com';
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ],
+};
+
 export default function VideoCall() {
   const { id } = useParams() as { id: string };
   const roomId = id;
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteStreamRef = useRef<MediaStream>(new MediaStream());
 
   const socket = useRef<Socket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
-  const isInitiator = useRef<boolean>(false);
-  const offerSent = useRef<boolean>(false);
+  const candidateQueue = useRef<RTCIceCandidateInit[]>([]);
 
   const [muted, setMuted] = useState(false);
   const [videoOff, setVideoOff] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>('Initializing...');
   const router = useRouter();
 
- useEffect(() => {
-  if (!roomId) return;
+  useEffect(() => {
+    if (!roomId) return;
 
-  socket.current = io(process.env.NEXT_PUBLIC_API_URL!, {
-    transports: ['websocket'],
-    autoConnect: true,
-    reconnection: true,
-  });
+    let isMounted = true;
 
-  pc.current = new RTCPeerConnection({
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-  });
+    // 1. Initialize WebRTC PeerConnection
+    const peerConnection = new RTCPeerConnection(ICE_SERVERS);
+    pc.current = peerConnection;
 
-  // ...
-}, [roomId]);
+    // 2. Setup Remote Stream Receiver
+    const remoteStream = new MediaStream();
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+
+    peerConnection.ontrack = (event) => {
+      event.streams[0].getTracks().forEach((track) => {
+        remoteStream.addTrack(track);
+      });
+    };
+
+    // 3. Initialize Socket Connection to Render Backend
+    const socketInstance = io(BACKEND_URL, {
+      path: '/api/socket',
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+    });
+    socket.current = socketInstance;
+
+    // 4. ICE Candidate Emission
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketInstance.emit('signal', {
+          roomId,
+          type: 'candidate',
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    // 5. Get User Local Media
+    async function startLocalStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        localStream.current = stream;
+
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        stream.getTracks().forEach((track) => {
+          peerConnection.addTrack(track, stream);
+        });
+
+        // Join the WebRTC room
+        socketInstance.emit('join', roomId);
+        setConnectionStatus('Waiting for partner...');
+      } catch (err) {
+        console.error('Error accessing media devices:', err);
+        setConnectionStatus('Camera/Mic Permission Denied');
+      }
+    }
+
+    startLocalStream();
+
+    // 6. Handle Socket Signaling Events
+    socketInstance.on('user-joined', async () => {
+      setConnectionStatus('Partner joined. Creating offer...');
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        socketInstance.emit('signal', {
+          roomId,
+          type: 'offer',
+          offer,
+        });
+      } catch (err) {
+        console.error('Failed to create offer:', err);
+      }
+    });
+
+    socketInstance.on('signal', async (data) => {
+      if (!isMounted) return;
+
+      try {
+        if (data.type === 'offer') {
+          setConnectionStatus('Connecting...');
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+          // Process queued candidates
+          while (candidateQueue.current.length > 0) {
+            const cand = candidateQueue.current.shift();
+            if (cand) await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+          }
+
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+
+          socketInstance.emit('signal', {
+            roomId,
+            type: 'answer',
+            answer,
+          });
+        } else if (data.type === 'answer') {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          setConnectionStatus('Connected');
+        } else if (data.type === 'candidate' && data.candidate) {
+          if (peerConnection.remoteDescription) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } else {
+            candidateQueue.current.push(data.candidate);
+          }
+        }
+      } catch (err) {
+        console.error('Signaling error:', err);
+      }
+    });
+
+    socketInstance.on('user-left', () => {
+      setConnectionStatus('Partner disconnected');
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
+    });
+
+    // Cleanup tracks, sockets, and connections on unmount
+    return () => {
+      isMounted = false;
+      if (localStream.current) {
+        localStream.current.getTracks().forEach((track) => track.stop());
+      }
+      if (socketInstance) {
+        socketInstance.emit('leave', roomId);
+        socketInstance.disconnect();
+      }
+      if (peerConnection) {
+        peerConnection.close();
+      }
+    };
+  }, [roomId]);
 
   const toggleMute = () => {
     if (localStream.current) {
-      localStream.current.getAudioTracks().forEach(track => (track.enabled = muted));
-      setMuted(!muted);
+      const audioTrack = localStream.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = muted;
+        setMuted(!muted);
+      }
     }
   };
 
   const toggleVideo = () => {
     if (localStream.current) {
-      localStream.current.getVideoTracks().forEach(track => (track.enabled = videoOff));
-      setVideoOff(!videoOff);
+      const videoTrack = localStream.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = videoOff;
+        setVideoOff(!videoOff);
+      }
     }
   };
 
-  const leaveCall = () => router.push('/');
+  const leaveCall = () => {
+    if (localStream.current) {
+      localStream.current.getTracks().forEach((track) => track.stop());
+    }
+    router.push('/');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-100 to-indigo-50 flex flex-col items-center p-6">
-      <div className="w-full max-w-5xl bg-black rounded-3xl shadow-2xl overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gradient-to-r from-purple-300 via-pink-300 to-yellow-300 p-2">
-          <div className="relative border-4 border-purple-500 rounded-lg overflow-hidden">
-            <video ref={localVideoRef} muted playsInline className="object-cover w-full h-64 md:h-80 transform transition-transform hover:scale-105" />
-            <div className="absolute bottom-2 left-2 bg-purple-600 bg-opacity-75 text-white px-3 py-1 rounded-lg font-semibold">You</div>
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-5xl bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+        
+        {/* Connection Banner */}
+        <div className="bg-slate-700/50 px-6 py-2 text-center text-sm font-medium text-slate-300">
+          Status: <span className="text-blue-400 font-semibold">{connectionStatus}</span>
+        </div>
+
+        {/* Video Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+          <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
+              You {muted && '(Muted)'}
+            </div>
           </div>
-          <div className="relative border-4 border-pink-500 rounded-lg overflow-hidden">
-            <video ref={remoteVideoRef} playsInline className="object-cover w-full h-64 md:h-80 transform transition-transform hover:scale-105" />
-            <div className="absolute bottom-2 left-2 bg-pink-600 bg-opacity-75 text-white px-3 py-1 rounded-lg font-semibold">Partner</div>
+
+          <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
+              Partner
+            </div>
           </div>
         </div>
-        <div className="flex justify-center items-center gap-8 bg-gradient-to-r from-indigo-500 to-fuchsia-500 p-4">
-          <button onClick={toggleMute} className="p-4 bg-white bg-opacity-30 backdrop-blur-md rounded-full shadow-lg hover:bg-opacity-50 transition">
-            {muted ? <FiMicOff size={28} className="text-red-500" /> : <FiMic size={28} className="text-green-500" />}
+
+        {/* Action Controls */}
+        <div className="flex justify-center items-center gap-6 bg-slate-900/80 p-4 border-t border-slate-700">
+          <button
+            onClick={toggleMute}
+            className={`p-4 rounded-full transition ${
+              muted ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
+            }`}
+            title={muted ? 'Unmute' : 'Mute'}
+          >
+            {muted ? <FiMicOff size={24} /> : <FiMic size={24} />}
           </button>
-          <button onClick={toggleVideo} className="p-4 bg-white bg-opacity-30 backdrop-blur-md rounded-full shadow-lg hover:bg-opacity-50 transition">
-            {videoOff ? <FiVideoOff size={28} className="text-red-500" /> : <FiVideo size={28} className="text-green-500" />}
+
+          <button
+            onClick={toggleVideo}
+            className={`p-4 rounded-full transition ${
+              videoOff ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
+            }`}
+            title={videoOff ? 'Turn Video On' : 'Turn Video Off'}
+          >
+            {videoOff ? <FiVideoOff size={24} /> : <FiVideo size={24} />}
           </button>
-          <button onClick={leaveCall} className="p-4 bg-red-600 rounded-full shadow-lg hover:bg-red-700 transition">
-            <FiLogOut size={28} className="text-white" />
+
+          <button
+            onClick={leaveCall}
+            className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition"
+            title="Leave Call"
+          >
+            <FiLogOut size={24} />
           </button>
         </div>
+
       </div>
     </div>
   );

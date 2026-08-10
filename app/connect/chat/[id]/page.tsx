@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
 interface Message {
   id: string;
@@ -14,6 +14,10 @@ interface Message {
   };
 }
 
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://virtua-health-consultancy-server.onrender.com';
+
 const ChatWindow = () => {
   const { id } = useParams() as { id?: string };
   const roomId = id ?? 'default-chat-room';
@@ -21,26 +25,30 @@ const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [mySocketId, setMySocketId] = useState<string>('');
 
-
-
   useEffect(() => {
-  const socketInstance = io(process.env.NEXT_PUBLIC_API_URL!, {
-  autoConnect: false,
-  reconnection: true,
-  timeout: 20000,
-});
+    // Correctly configured Socket instance matching Render express setup
+    const socketInstance: Socket = io(BACKEND_URL, {
+      path: '/api/socket', // Critical: Matches Express backend route
+      withCredentials: true,
+      transports: ['websocket', 'polling'], // Allows fallback if WebSocket handshake drops
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      timeout: 20000,
+    });
 
     const handleConnect = () => {
-      console.log('Connected:', socketInstance.id);
+      console.log('Connected to Render Chat Socket:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     };
 
-    const handleConnectError = (err: any) => {
-      console.error('Connection error:', err);
+    const handleConnectError = (err: Error) => {
+      console.error('Socket Connection error:', err.message);
     };
 
     const handleConnectTimeout = () => {
@@ -49,8 +57,8 @@ const ChatWindow = () => {
 
     const handleSignal = (incomingMessage: Message) => {
       console.log('Received message:', incomingMessage);
-      setMessages(prevMessages => {
-        if (prevMessages.some(msg => msg.id === incomingMessage.id)) {
+      setMessages((prevMessages) => {
+        if (prevMessages.some((msg) => msg.id === incomingMessage.id)) {
           return prevMessages;
         }
         return [...prevMessages, incomingMessage];
@@ -91,12 +99,12 @@ const ChatWindow = () => {
     if (newMessage.trim() && socket) {
       const messageToSend: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id,
+        senderId: socket.id || mySocketId,
         content: newMessage,
       };
 
-      // Add message immediately to UI (optimistic update)
-      setMessages(prev => [...prev, messageToSend]);
+      // Optimistic update
+      setMessages((prev) => [...prev, messageToSend]);
       setNewMessage('');
 
       // Send to server
@@ -111,7 +119,7 @@ const ChatWindow = () => {
     reader.onload = () => {
       const fileMessage: Message = {
         id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id,
+        senderId: socket.id || mySocketId,
         file: {
           name: file.name,
           type: file.type,
@@ -119,18 +127,16 @@ const ChatWindow = () => {
         },
       };
 
-      // Add file message immediately to UI
-      setMessages(prev => [...prev, fileMessage]);
+      setMessages((prev) => [...prev, fileMessage]);
       setFile(null);
 
-      // Send to server with roomId
       socket.emit('signal', { ...fileMessage, roomId });
     };
     reader.readAsDataURL(file);
   };
 
   const handleDeleteMessage = (id: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== id));
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
   };
 
   return (
@@ -144,7 +150,9 @@ const ChatWindow = () => {
         />
         <div className="flex flex-col">
           <span className="font-semibold">Dr. John Smith</span>
-          <span className="text-sm text-green-200">Online</span>
+          <span className="text-sm text-green-200">
+            {socket?.connected ? 'Online' : 'Connecting...'}
+          </span>
         </div>
       </div>
 
@@ -166,10 +174,10 @@ const ChatWindow = () => {
             >
               {msg.senderId !== mySocketId && (
                 <div className="text-xs font-semibold mb-1">
-                  {msg.senderId === socket?.id ? 'You' : `User ${msg.senderId.slice(0, 4)}`}
+                  User {msg.senderId ? msg.senderId.slice(0, 4) : 'Guest'}
                 </div>
               )}
-              
+
               {msg.content && <p className="break-words">{msg.content}</p>}
 
               {msg.file && (
@@ -231,7 +239,9 @@ const ChatWindow = () => {
           />
           {file && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-black truncate max-w-[100px]">{file.name}</span>
+              <span className="text-sm text-black truncate max-w-[100px]">
+                {file.name}
+              </span>
               <button
                 onClick={() => setFile(null)}
                 className="text-red-500 hover:text-red-700"
@@ -244,7 +254,9 @@ const ChatWindow = () => {
             onClick={handleSendFile}
             disabled={!file}
             className={`px-6 py-2 rounded-full text-white transition ${
-              file ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'
+              file
+                ? 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-gray-300 cursor-not-allowed'
             }`}
           >
             Send File
