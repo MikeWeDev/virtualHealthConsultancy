@@ -1,12 +1,21 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import {
+  FiPaperclip,
+  FiSend,
+  FiX,
+  FiFile,
+  FiCheck,
+} from 'react-icons/fi';
 
 interface Message {
   id: string;
   senderId: string;
   content?: string;
+  timestamp?: string;
   file?: {
     name: string;
     type: string;
@@ -14,9 +23,10 @@ interface Message {
   };
 }
 
-const BACKEND_URL =
+const BACKEND_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://virtua-health-consultancy-server.onrender.com';
+  'https://virtua-health-consultancy-server.onrender.com'
+).replace(/\/$/, '');
 
 const ChatWindow = () => {
   const { id } = useParams() as { id?: string };
@@ -25,60 +35,49 @@ const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [mySocketId, setMySocketId] = useState<string>('');
 
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    // Correctly configured Socket instance matching Render express setup
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
     const socketInstance: Socket = io(BACKEND_URL, {
-      path: '/api/socket', // Critical: Matches Express backend route
+      path: '/api/socket',
       withCredentials: true,
-      transports: ['websocket', 'polling'], // Allows fallback if WebSocket handshake drops
+      transports: ['polling', 'websocket'],
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 10,
-      reconnectionDelay: 300,
+      reconnectionDelay: 1000,
       timeout: 60000,
     });
 
     const handleConnect = () => {
-      console.log('Connected to Render Chat Socket:', socketInstance.id);
       setMySocketId(socketInstance.id ?? '');
       socketInstance.emit('join', roomId);
     };
 
-    const handleConnectError = (err: Error) => {
-      console.error('Socket Connection error:', err.message);
-    };
-
-    const handleConnectTimeout = () => {
-      console.error('Socket connect timeout');
-    };
-
     const handleSignal = (incomingMessage: Message) => {
-      console.log('Received message:', incomingMessage);
-      setMessages((prevMessages) => {
-        if (prevMessages.some((msg) => msg.id === incomingMessage.id)) {
-          return prevMessages;
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === incomingMessage.id)) {
+          return prev;
         }
-        return [...prevMessages, incomingMessage];
+        return [...prev, incomingMessage];
       });
-    };
-
-    const handleUserJoined = (userId: string) => {
-      console.log(`User joined: ${userId}`);
-    };
-
-    const handleUserLeft = (userId: string) => {
-      console.log(`User left: ${userId}`);
     };
 
     socketInstance.on('connect', handleConnect);
     socketInstance.on('signal', handleSignal);
-    socketInstance.on('user-joined', handleUserJoined);
-    socketInstance.on('user-left', handleUserLeft);
-    socketInstance.on('connect_error', handleConnectError);
-    socketInstance.on('connect_timeout', handleConnectTimeout);
 
     socketInstance.open();
     setSocket(socketInstance);
@@ -86,182 +85,238 @@ const ChatWindow = () => {
     return () => {
       socketInstance.off('connect', handleConnect);
       socketInstance.off('signal', handleSignal);
-      socketInstance.off('user-joined', handleUserJoined);
-      socketInstance.off('user-left', handleUserLeft);
-      socketInstance.off('connect_error', handleConnectError);
-      socketInstance.off('connect_timeout', handleConnectTimeout);
       socketInstance.emit('leave', roomId);
       socketInstance.disconnect();
     };
   }, [roomId]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && socket) {
-      const messageToSend: Message = {
-        id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id || mySocketId,
-        content: newMessage,
-      };
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
 
-      // Optimistic update
-      setMessages((prev) => [...prev, messageToSend]);
-      setNewMessage('');
-
-      // Send to server
-      socket.emit('signal', { ...messageToSend, roomId });
+    setFile(selectedFile);
+    if (selectedFile.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => setFilePreview(reader.result as string);
+      reader.readAsDataURL(selectedFile);
+    } else {
+      setFilePreview(null);
     }
   };
 
-  const handleSendFile = () => {
-    if (!file || !socket) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const fileMessage: Message = {
-        id: `${Date.now()}-${crypto.randomUUID()}`,
-        senderId: socket.id || mySocketId,
-        file: {
-          name: file.name,
-          type: file.type,
-          data: reader.result as string,
-        },
-      };
-
-      setMessages((prev) => [...prev, fileMessage]);
-      setFile(null);
-
-      socket.emit('signal', { ...fileMessage, roomId });
-    };
-    reader.readAsDataURL(file);
+  const removeFile = () => {
+    setFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleDeleteMessage = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  const handleSend = () => {
+    if ((!newMessage.trim() && !file) || !socket) return;
+
+    const timeString = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const fileMessage: Message = {
+          id: `${Date.now()}-${crypto.randomUUID()}`,
+          senderId: socket.id || mySocketId,
+          timestamp: timeString,
+          content: newMessage.trim() || undefined,
+          file: {
+            name: file.name,
+            type: file.type,
+            data: reader.result as string,
+          },
+        };
+
+        setMessages((prev) => [...prev, fileMessage]);
+        socket.emit('signal', { ...fileMessage, roomId });
+        removeFile();
+        setNewMessage('');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const messageToSend: Message = {
+        id: `${Date.now()}-${crypto.randomUUID()}`,
+        senderId: socket.id || mySocketId,
+        content: newMessage.trim(),
+        timestamp: timeString,
+      };
+
+      setMessages((prev) => [...prev, messageToSend]);
+      socket.emit('signal', { ...messageToSend, roomId });
+      setNewMessage('');
+    }
+  };
+
+  const handleDeleteMessage = (msgId: string) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== msgId));
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-0 bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col h-[600px]">
-      {/* Top Navbar */}
-      <div className="flex items-center gap-4 p-4 border-b bg-blue-500 text-white rounded-t-lg">
-        <img
-          src="https://randomuser.me/api/portraits/men/32.jpg"
-          alt="Doctor Avatar"
-          className="w-10 h-10 rounded-full object-cover"
-        />
-        <div className="flex flex-col">
-          <span className="font-semibold">Dr. John Smith</span>
-          <span className="text-sm text-green-200">
-            {socket?.connected ? 'Online' : 'Connecting...'}
+    /* Main Layout Pinning: fixed height matching screen without viewport page overflow */
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[565px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
+      
+      {/* 1. Header (Fixed top, flex-shrink-0 stops vertical compression) */}
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
+        <div className="relative">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            alt="Doctor Avatar"
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <span
+            className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#17212b] ${
+              socket?.connected ? 'bg-emerald-500' : 'bg-amber-500'
+            }`}
+          />
+        </div>
+        <div className="flex flex-col flex-1 min-w-0">
+          <h2 className="text-white font-medium text-base truncate">
+            Dr. John Smith
+          </h2>
+          <span className="text-xs text-slate-400">
+            {socket?.connected ? 'online' : 'connecting...'}
           </span>
         </div>
       </div>
 
-      {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.senderId === mySocketId ? 'justify-end' : 'justify-start'
-            }`}
-          >
+      {/* 2. Chat Messages Area (Takes up remaining space, only this section scrolls) */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#0e1621]">
+        {messages.map((msg) => {
+          const isMe = msg.senderId === mySocketId;
+
+          return (
             <div
-              className={`group relative max-w-xs p-3 rounded-lg text-sm shadow ${
-                msg.senderId === mySocketId
-                  ? 'bg-blue-500 text-white rounded-br-none'
-                  : 'bg-gray-200 text-black rounded-bl-none'
-              }`}
+              key={msg.id}
+              className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.senderId !== mySocketId && (
-                <div className="text-xs font-semibold mb-1">
-                  User {msg.senderId ? msg.senderId.slice(0, 4) : 'Guest'}
-                </div>
-              )}
-
-              {msg.content && <p className="break-words">{msg.content}</p>}
-
-              {msg.file && (
-                <div className="flex flex-col gap-1 mt-2">
-                  {msg.file.type.startsWith('image') ? (
-                    <img
-                      src={msg.file.data}
-                      alt={msg.file.name}
-                      className="max-w-[160px] max-h-[160px] object-cover rounded-md"
-                    />
-                  ) : (
-                    <a
-                      href={msg.file.data}
-                      download={msg.file.name}
-                      className="text-blue-500 underline hover:text-blue-700"
-                    >
-                      Download {msg.file.name}
-                    </a>
-                  )}
-                </div>
-              )}
-
-              <button
-                onClick={() => handleDeleteMessage(msg.id)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 hidden group-hover:flex items-center justify-center shadow-md hover:bg-red-600 transition"
-                title="Delete"
+              <div
+                className={`group relative max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow-md break-words ${
+                  isMe
+                    ? 'bg-[#2b5278] text-white rounded-br-xs'
+                    : 'bg-[#182533] text-slate-100 rounded-bl-xs border border-slate-800'
+                }`}
               >
-                ×
-              </button>
+                {!isMe && (
+                  <div className="text-[11px] font-medium text-sky-400 mb-1">
+                    User {msg.senderId ? msg.senderId.slice(0, 4) : 'Guest'}
+                  </div>
+                )}
+
+                {msg.file && (
+                  <div className="mb-2">
+                    {msg.file.type.startsWith('image/') ? (
+                      <img
+                        src={msg.file.data}
+                        alt={msg.file.name}
+                        className="rounded-lg max-h-60 w-full object-cover"
+                      />
+                    ) : (
+                      <a
+                        href={msg.file.data}
+                        download={msg.file.name}
+                        className="flex items-center gap-2 p-2 bg-black/20 rounded-lg hover:bg-black/30 transition text-sky-300"
+                      >
+                        <FiFile className="w-6 h-6 flex-shrink-0" />
+                        <span className="text-xs truncate max-w-[180px]">
+                          {msg.file.name}
+                        </span>
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {msg.content && <p className="leading-relaxed">{msg.content}</p>}
+
+                <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
+                  <span>{msg.timestamp || 'Just now'}</span>
+                  {isMe && <FiCheck className="w-3 h-3 text-sky-300" />}
+                </div>
+
+                <button
+                  onClick={() => handleDeleteMessage(msg.id)}
+                  className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                  title="Delete message"
+                >
+                  <FiX className="w-3 h-3" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Section */}
-      <div className="p-4 border-t bg-white flex flex-col gap-3">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message"
-            className="flex-1 p-3 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-          />
+      {/* 3. Attachment Preview (Pinned above bottom bar if active) */}
+      {file && (
+        <div className="flex items-center justify-between px-4 py-2 bg-[#17212b] border-t border-slate-800 text-xs text-slate-200 flex-shrink-0">
+          <div className="flex items-center gap-2 truncate">
+            {filePreview ? (
+              <img
+                src={filePreview}
+                alt="Preview"
+                className="w-8 h-8 rounded object-cover"
+              />
+            ) : (
+              <FiFile className="w-5 h-5 text-sky-400" />
+            )}
+            <span className="truncate max-w-[200px] font-medium">
+              {file.name}
+            </span>
+          </div>
           <button
-            onClick={handleSendMessage}
-            className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
+            onClick={removeFile}
+            className="p-1 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition"
           >
-            Send
+            <FiX className="w-4 h-4" />
           </button>
         </div>
+      )}
 
-        <div className="flex items-center justify-between gap-4">
-          <input
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
-          />
-          {file && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-black truncate max-w-[100px]">
-                {file.name}
-              </span>
-              <button
-                onClick={() => setFile(null)}
-                className="text-red-500 hover:text-red-700"
-              >
-                ×
-              </button>
-            </div>
-          )}
-          <button
-            onClick={handleSendFile}
-            disabled={!file}
-            className={`px-6 py-2 rounded-full text-white transition ${
-              file
-                ? 'bg-blue-500 hover:bg-blue-600'
-                : 'bg-gray-300 cursor-not-allowed'
-            }`}
-          >
-            Send File
-          </button>
-        </div>
+      {/* 4. Bottom Input Field (Pinned at the bottom, flex-shrink-0 guarantees no scrolling required) */}
+      <div className="p-2 sm:p-3 bg-[#17212b] border-t border-slate-800 flex items-center gap-2 flex-shrink-0">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2.5 text-slate-400 hover:text-sky-400 rounded-full hover:bg-slate-800 transition flex-shrink-0"
+          title="Attach file"
+        >
+          <FiPaperclip className="w-5 h-5" />
+        </button>
+
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Write a message..."
+          className="flex-1 bg-[#0e1621] text-white placeholder-slate-500 text-sm rounded-full px-4 py-2.5 focus:outline-none border border-slate-800 focus:border-sky-500 transition"
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+        />
+
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={!newMessage.trim() && !file}
+          className={`p-2.5 rounded-full transition flex-shrink-0 ${
+            newMessage.trim() || file
+              ? 'bg-sky-500 text-white hover:bg-sky-400 cursor-pointer'
+              : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+          }`}
+        >
+          <FiSend className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );
