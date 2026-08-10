@@ -1,49 +1,31 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
-
-const ACCESS_SECRET = process.env.ACCESS_SECRET || process.env.SECRET_KEY || 'access_secret_dev';
-
-const PROTECTED_PATHS = ['/connect', '/api'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow public assets and API auth endpoints
-  if (
-    pathname.startsWith('/api/login') ||
-    pathname.startsWith('/api/register') ||
-    pathname.startsWith('/api/refresh') ||
-    pathname.startsWith('/api/logout') ||
-    pathname.startsWith('/api/me')
-  ) {
+  // Let Next.js render page routes like /connect/chat/...
+  // The client React components will verify auth state against Render API via apiFetch
+  if (pathname.startsWith('/connect')) {
     return NextResponse.next();
   }
 
-  // If path is protected, ensure there's a valid token cookie
-  const matchesProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
-  if (!matchesProtected) return NextResponse.next();
-
+  // Check for local session cookie if present
   const token = req.cookies.get('token')?.value;
-  console.log('[middleware] pathname:', pathname, 'token?', Boolean(token));
-  if (!token) {
-    console.log('[middleware] no token, redirecting to login');
-    const loginUrl = new URL('/', req.url);
-    loginUrl.pathname = '/';
-    return NextResponse.redirect(loginUrl);
+
+  // If calling local Next.js API proxy routes without a token
+  if (pathname.startsWith('/api') && !token) {
+    // Allow public auth endpoints
+    if (
+      pathname.startsWith('/api/login') ||
+      pathname.startsWith('/api/register') ||
+      pathname.startsWith('/api/refresh')
+    ) {
+      return NextResponse.next();
+    }
   }
 
-  try {
-    jwt.verify(token, ACCESS_SECRET);
-    console.log('[middleware] token valid');
-    return NextResponse.next();
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    console.log('[middleware] token invalid:', errorMessage);
-    const loginUrl = new URL('/', req.url);
-    loginUrl.pathname = '/';
-    return NextResponse.redirect(loginUrl);
-  }
+  return NextResponse.next();
 }
 
 export const config = {
