@@ -36,9 +36,9 @@ const ChatWindow = () => {
       transports: ['websocket', 'polling'], // Allows fallback if WebSocket handshake drops
       autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-      timeout: 20000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 300,
+      timeout: 60000,
     });
 
     const handleConnect = () => {

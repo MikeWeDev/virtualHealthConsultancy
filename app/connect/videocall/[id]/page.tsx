@@ -55,13 +55,16 @@ export default function VideoCall() {
     };
 
     // 3. Initialize Socket Connection to Render Backend
-    const socketInstance = io(BACKEND_URL, {
+   const socketInstance = io(BACKEND_URL, {
       path: '/api/socket',
       withCredentials: true,
-      transports: ['websocket', 'polling'],
+      // Change order to 'polling' first so HTTP handshakes hold open while Render boots
+      transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10, // Increase retry attempts for cold starts
+      reconnectionDelay: 3000,  // Wait 3s between retries
+      timeout: 60000,           // Give Render up to 60 seconds to wake up
     });
     socket.current = socketInstance;
 
