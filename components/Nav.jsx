@@ -11,6 +11,10 @@ export default function Navbar() {
   const firstName = user?.name?.split(' ')[0] || 'User';
   const userInitial = firstName.charAt(0).toUpperCase();
 
+  // Root landing path where your sections (#services, #doctors, etc.) exist
+  // If your main landing page is '/home', change rootPath to '/home'
+  const rootPath = '/home';
+
   useEffect(() => {
     if (!user && typeof window !== 'undefined') {
       const cookiePair = document.cookie
@@ -71,16 +75,24 @@ export default function Navbar() {
         <nav className="hidden flex-1 md:block">
           <ul className="flex items-center justify-center gap-8 text-sm font-medium text-slate-300">
             <li>
-              <a href="#services" className="transition-colors hover:text-emerald-400">Services</a>
+              <Link href={`${rootPath}#services`} className="transition-colors hover:text-emerald-400">
+                Services
+              </Link>
             </li>
             <li>
-              <a href="#doctors" className="transition-colors hover:text-emerald-400">Doctors</a>
+              <Link href={`${rootPath}#doctors`} className="transition-colors hover:text-emerald-400">
+                Doctors
+              </Link>
             </li>
             <li>
-              <a href="#reviews" className="transition-colors hover:text-emerald-400">Reviews</a>
+              <Link href={`${rootPath}#reviews`} className="transition-colors hover:text-emerald-400">
+                Reviews
+              </Link>
             </li>
             <li>
-              <a href="#contact" className="transition-colors hover:text-emerald-400">Contact</a>
+              <Link href={`${rootPath}#contact`} className="transition-colors hover:text-emerald-400">
+                Contact
+              </Link>
             </li>
           </ul>
         </nav>
@@ -101,6 +113,12 @@ export default function Navbar() {
                 aria-label={`Go to ${user?.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
               >
                 {userInitial}
+              </Link>
+            <Link
+               href="/doctor-login"
+                className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
+              >
+                Login as a doc
               </Link>
               <button
                 onClick={() => logout()}
@@ -140,40 +158,40 @@ export default function Navbar() {
         <nav className="border-t border-slate-800 bg-slate-950/95 px-6 py-5 backdrop-blur-xl md:hidden">
           <ul className="flex flex-col gap-3 text-sm font-medium text-slate-300">
             <li>
-              <a 
-                href="#services" 
+              <Link 
+                href={`${rootPath}#services`}
                 onClick={() => setMenuOpen(false)}
                 className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
               >
                 Services
-              </a>
+              </Link>
             </li>
             <li>
-              <a 
-                href="#doctors" 
+              <Link 
+                href={`${rootPath}#doctors`}
                 onClick={() => setMenuOpen(false)}
                 className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
               >
                 Doctors
-              </a>
+              </Link>
             </li>
             <li>
-              <a 
-                href="#reviews" 
+              <Link 
+                href={`${rootPath}#reviews`}
                 onClick={() => setMenuOpen(false)}
                 className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
               >
                 Reviews
-              </a>
+              </Link>
             </li>
             <li>
-              <a 
-                href="#contact" 
+              <Link 
+                href={`${rootPath}#contact`}
                 onClick={() => setMenuOpen(false)}
                 className="block rounded-xl px-4 py-3 transition-colors hover:bg-slate-900 hover:text-emerald-400"
               >
                 Contact
-              </a>
+              </Link>
             </li>
             <li className="pt-2">
               {user ? (

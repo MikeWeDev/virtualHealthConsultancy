@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, initialized, setUser } = useUser();
 
-  /*useEffect(() => {
+ /* useEffect(() => {
     if (!initialized) return;
     if (user?.role === 'doctor') {
       router.push('/doctorProfile');

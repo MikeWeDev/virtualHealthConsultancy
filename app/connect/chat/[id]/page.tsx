@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import {
@@ -10,6 +10,8 @@ import {
   FiFile,
   FiCheck,
 } from 'react-icons/fi';
+import { useUser } from '../../../context/UserContext';
+import doctorData from '../../../doctor/ProductPage';
 
 interface Message {
   id: string;
@@ -31,6 +33,23 @@ const BACKEND_URL = (
 const ChatWindow = () => {
   const { id } = useParams() as { id?: string };
   const roomId = id ?? 'default-chat-room';
+
+  const { user } = useUser();
+
+  // Retrieve predefined Doctor details
+  const doctor = useMemo(() => {
+    if (!user?.doctorId) return null;
+    return doctorData.find((item) => String(item.id) === String(user.doctorId)) || null;
+  }, [user]);
+
+  // Doctor Name and Initial for Header & Incoming Messages
+  const rawDoctorName = doctor?.Name || '';
+  const doctorName = rawDoctorName.startsWith('Dr.') ? rawDoctorName : `Dr. ${rawDoctorName}`;
+  const doctorInitial = doctorName.replace(/^Dr\.\s*/i, '').charAt(0).toUpperCase() || 'D';
+
+  // Patient Info for Outgoing Messages
+  const patientName = user?.name || 'Guest Patient';
+  const patientInitial = patientName.charAt(0).toUpperCase() || 'P';
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
@@ -158,17 +177,14 @@ const ChatWindow = () => {
   };
 
   return (
-    /* Main Layout Pinning: fixed height matching screen without viewport page overflow */
     <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[500px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
       
-      {/* 1. Header (Fixed top, flex-shrink-0 stops vertical compression) */}
+      {/* 1. Header: Always Predefined Doctor Info */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
-        <div className="relative">
-          <img
-            src="https://randomuser.me/api/portraits/men/32.jpg"
-            alt="Doctor Avatar"
-            className="w-10 h-10 rounded-full object-cover"
-          />
+        <div className="relative flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-base shadow-inner">
+            {doctorInitial}
+          </div>
           <span
             className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#17212b] ${
               socket?.connected ? 'bg-emerald-500' : 'bg-amber-500'
@@ -177,7 +193,7 @@ const ChatWindow = () => {
         </div>
         <div className="flex flex-col flex-1 min-w-0">
           <h2 className="text-white font-medium text-base truncate">
-            Dr. John Smith
+            {doctorName}
           </h2>
           <span className="text-xs text-slate-400">
             {socket?.connected ? 'online' : 'connecting...'}
@@ -185,7 +201,7 @@ const ChatWindow = () => {
         </div>
       </div>
 
-      {/* 2. Chat Messages Area (Takes up remaining space, only this section scrolls) */}
+      {/* 2. Messages Container */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#0e1621]">
         {messages.map((msg) => {
           const isMe = msg.senderId === mySocketId;
@@ -202,9 +218,21 @@ const ChatWindow = () => {
                     : 'bg-[#182533] text-slate-100 rounded-bl-xs border border-slate-800'
                 }`}
               >
-                {!isMe && (
-                  <div className="text-[11px] font-medium text-sky-400 mb-1">
-                    User {msg.senderId ? msg.senderId.slice(0, 4) : 'Guest'}
+                {/* Outgoing (Patient point of view) */}
+                {isMe ? (
+                  <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-sky-200 mb-1">
+                    <span>{patientName}</span>
+                    <span className="w-4 h-4 rounded-full bg-sky-700 text-white flex items-center justify-center text-[9px] font-bold">
+                      {patientInitial}
+                    </span>
+                  </div>
+                ) : (
+                  /* Incoming (Doctor response) */
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 mb-1">
+                    <span className="w-4 h-4 rounded-full bg-emerald-900 text-emerald-200 flex items-center justify-center text-[9px] font-bold">
+                      {doctorInitial}
+                    </span>
+                    <span>{doctorName}</span>
                   </div>
                 )}
 
@@ -252,7 +280,7 @@ const ChatWindow = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. Attachment Preview (Pinned above bottom bar if active) */}
+      {/* 3. Attachment Preview */}
       {file && (
         <div className="flex items-center justify-between px-4 py-2 bg-[#17212b] border-t border-slate-800 text-xs text-slate-200 flex-shrink-0">
           <div className="flex items-center gap-2 truncate">
@@ -278,7 +306,7 @@ const ChatWindow = () => {
         </div>
       )}
 
-      {/* 4. Bottom Input Field (Pinned at the bottom, flex-shrink-0 guarantees no scrolling required) */}
+      {/* 4. Bottom Input */}
       <div className="p-2 sm:p-3 bg-[#17212b] border-t border-slate-800 flex items-center gap-2 flex-shrink-0">
         <input
           type="file"
