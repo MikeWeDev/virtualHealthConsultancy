@@ -1,7 +1,7 @@
 
   const newDatas = [
     {
-        Name: "Dr. Alice Johnson",
+        Name: "Dr. David Harris",
         fName: "a",
         id: 1,
         amount: 1,
@@ -23,7 +23,7 @@
         time: "old"
     },
     {
-        Name: "Dr. Sarah Lee",
+        Name: "Dr. Moges mola",
         fName: "s",
         id: 3,
         amount: 1,
@@ -45,7 +45,7 @@
         time: "old"
     },
     {
-        Name: "Dr. Emily Davis",
+        Name: "Dr. Alice Johnson",
         fName: "e",
         id: 5,
         amount: 1,
@@ -78,7 +78,7 @@
         time: "new"
     },
     {
-        Name: "Dr. David Harris",
+        Name: "Dr. Emily Davis",
         fName: "d",
         id: 8,
         amount: 1,

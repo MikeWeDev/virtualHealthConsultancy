@@ -15,14 +15,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, initialized, setUser } = useUser();
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (!initialized) return;
     if (user?.role === 'doctor') {
       router.push('/doctorProfile');
     } else if (user?.role === 'patient') {
       router.push('/home');
     }
-  }, [initialized, user, router]);
+  }, [initialized, user, router]);*/
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });

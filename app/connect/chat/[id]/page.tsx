@@ -159,7 +159,7 @@ const ChatWindow = () => {
 
   return (
     /* Main Layout Pinning: fixed height matching screen without viewport page overflow */
-    <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[565px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[500px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
       
       {/* 1. Header (Fixed top, flex-shrink-0 stops vertical compression) */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">

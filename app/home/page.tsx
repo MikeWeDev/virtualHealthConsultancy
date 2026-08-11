@@ -23,7 +23,6 @@ import {
   ChevronUp
 } from 'lucide-react';
 import newDatas from './ProductPage';
-import Navbar from '../../components/Nav';
 
 const reviews = [
   {
@@ -157,7 +156,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
-      <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-20 space-y-24">
         
@@ -184,13 +182,13 @@ export default function Home() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link 
-                  href="/patient" 
+                <a 
+                  href="#doctors" 
                   className="group inline-flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
                 >
                   Book a Visit
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
                 <a 
                   href="#services" 
                   className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 px-8 py-4 text-sm font-semibold text-white transition-all hover:border-slate-500 hover:bg-slate-800"
