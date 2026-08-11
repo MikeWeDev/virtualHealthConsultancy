@@ -19,7 +19,8 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
-  Award
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import newDatas from './ProductPage';
 import Navbar from '../../components/Nav';
@@ -29,7 +30,7 @@ const reviews = [
     name: 'Dr. Emily R.',
     role: 'Licensed Therapist',
     feedback: 'This platform has transformed how I manage patient relationships. The seamless telehealth integration and intuitive scheduling save me hours every week.',
-    image: 'https://images.unsplash.com/photo-1594824813566-7885a39644d6?auto=format&fit=crop&q=80&w=250',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     rating: 5,
     tag: 'Verified Practitioner'
   },
@@ -37,7 +38,7 @@ const reviews = [
     name: 'Dr. Daniel M.',
     role: 'Cardiologist',
     feedback: 'High-definition video calls and instant record sharing make digital consults feel just as personal and thorough as in-person visits.',
-    image: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=250',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250',
     rating: 5,
     tag: 'Clinical Specialist'
   },
@@ -99,6 +100,7 @@ const services = [
 
 export default function Home() {
   const [search, setSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(9); // Initial 9 doctors displayed
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
   const router = useRouter();
@@ -128,9 +130,19 @@ export default function Home() {
     search ? item.fName?.toLowerCase().includes(search.toLowerCase()) || item.Name?.toLowerCase().includes(search.toLowerCase()) : true
   );
 
+  const displayedDoctors = filteredDoctors.slice(0, visibleCount);
+
+  const toggleShowAll = () => {
+    if (visibleCount >= filteredDoctors.length) {
+      setVisibleCount(9);
+    } else {
+      setVisibleCount(filteredDoctors.length);
+    }
+  };
+
   const currentReview = reviews[reviewIndex];
 
-  const renderStars = (rating) => {
+  const renderStars = (rating: number) => {
     return (
       <div className="inline-flex gap-1 text-amber-400">
         {[...Array(5)].map((_, i) => (
@@ -309,9 +321,16 @@ export default function Home() {
                   </h3>
                   <p className="text-sm text-slate-400 leading-relaxed">{service.description}</p>
                   
-                  <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
-                    <span className="text-xs font-semibold text-slate-300">Book Teleconsultation</span>
-                    <ArrowRight className="h-4 w-4 text-emerald-400 transition-transform group-hover:translate-x-1" />
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <a 
+                      href="#doctors"
+                      className="group/scroll flex items-center justify-between text-xs font-semibold text-slate-300 hover:text-emerald-400 transition-colors"
+                    >
+                      <span>Book Teleconsultation</span>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 group-hover/scroll:bg-emerald-400 group-hover/scroll:text-slate-950 transition-colors">
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover/scroll:translate-x-0.5" />
+                      </div>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -333,7 +352,10 @@ export default function Home() {
               <input
                 type="search"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setVisibleCount(9); // Reset count when filtering
+                }}
                 placeholder="Search by doctor name or specialty..."
                 className="w-full rounded-full border border-slate-800 bg-slate-900/90 py-3.5 pr-4 pl-11 text-sm text-white placeholder-slate-500 shadow-inner outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
@@ -341,7 +363,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDoctors.slice(0, 6).map((item) => (
+            {displayedDoctors.map((item) => (
               <div 
                 key={item.id} 
                 className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-900"
@@ -350,7 +372,7 @@ export default function Home() {
                   <Image 
                     src={item.img} 
                     alt={item.Name || 'Doctor profile'} 
-                    fill 
+                     fill
                     className="object-fill transition-transform duration-500 group-hover:scale-105" 
                   />
                   <span className="absolute bottom-3 left-3 rounded-md bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-400 backdrop-blur-md border border-slate-700">
@@ -376,6 +398,27 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* VIEW ALL / SHOW LESS BUTTON */}
+          {filteredDoctors.length > 9 && (
+            <div className="flex justify-center pt-6">
+              <button
+                onClick={toggleShowAll}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/90 px-8 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:border-emerald-500 hover:bg-emerald-500 hover:text-slate-950 hover:scale-105 active:scale-95"
+              >
+                <span>
+                  {visibleCount >= filteredDoctors.length 
+                    ? 'Show Fewer Doctors' 
+                    : `View All Doctors (${filteredDoctors.length})`}
+                </span>
+                {visibleCount >= filteredDoctors.length ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          )}
         </section>
 
         {/* REVIEWS CAROUSEL */}
