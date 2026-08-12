@@ -58,7 +58,7 @@ export default function Navbar() {
   }, [user, setUser]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl transition-all">
+    <header className="sticky top-0 z-50 border-b border-slate-800 bg-black transition-all">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-4">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-3 group">
@@ -114,12 +114,7 @@ export default function Navbar() {
               >
                 {userInitial}
               </Link>
-            <Link
-               href="/doctor-login"
-                className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
-              >
-                Login as a doc
-              </Link>
+           
               <button
                 onClick={() => logout()}
                 className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
