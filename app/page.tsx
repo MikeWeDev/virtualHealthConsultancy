@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -13,16 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { user, initialized, setUser } = useUser();
-
- /* useEffect(() => {
-    if (!initialized) return;
-    if (user?.role === 'doctor') {
-      router.push('/doctorProfile');
-    } else if (user?.role === 'patient') {
-      router.push('/home');
-    }
-  }, [initialized, user, router]);*/
+  const { setUser } = useUser();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,8 +37,6 @@ export default function LoginPage() {
       } catch (jsonErr) {
         console.warn('[LoginPage] Unable to parse response body as JSON', jsonErr);
       }
-
-      console.log('[LoginPage] api/login response status:', res.status);
 
       if (!res.ok) {
         setError(data.error || 'Login failed. Please check your credentials.');
@@ -73,37 +62,58 @@ export default function LoginPage() {
     }
   };
 
-  const createGuestAccount = async () => {
+  const handlePatientAccess = async () => {
     setError('');
     setLoading(true);
 
-    const guestName = `Guest-${Date.now()}`;
-    const guestPassword = Math.random().toString(36).slice(2, 10);
-
     try {
-      const registerRes = await apiFetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: guestName, password: guestPassword }),
-      });
+      let name = '';
+      let password = '';
 
-      if (!registerRes.ok) {
-        let regData: any = {};
-        try { regData = await registerRes.json(); } catch (_) {}
-        setError(regData.error || 'Guest account creation failed');
-        return;
+      // Check for previously registered guest credentials
+      const savedGuest = localStorage.getItem('guest_credentials');
+
+      if (savedGuest) {
+        const parsed = JSON.parse(savedGuest);
+        name = parsed.name;
+        password = parsed.password;
+      } else {
+        // Generate new guest details if none exist
+        name = `Guest-${Date.now()}`;
+        password = Math.random().toString(36).slice(2, 10);
+
+        const registerRes = await apiFetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, password }),
+        });
+
+        if (!registerRes.ok) {
+          let regData: any = {};
+          try { regData = await registerRes.json(); } catch (_) {}
+          setError(regData.error || 'Guest account creation failed');
+          setLoading(false);
+          return;
+        }
+
+        // Store credentials locally on this browser
+        localStorage.setItem('guest_credentials', JSON.stringify({ name, password }));
       }
 
+      // Log in with existing or newly generated guest credentials
       const loginRes = await apiFetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: guestName, password: guestPassword }),
+        body: JSON.stringify({ name, password }),
       });
 
       if (!loginRes.ok) {
+        // Clear stored credentials if account is invalid or deleted on server
+        localStorage.removeItem('guest_credentials');
         let loginData: any = {};
         try { loginData = await loginRes.json(); } catch (_) {}
         setError(loginData.error || 'Guest login failed');
+        setLoading(false);
         return;
       }
 
@@ -117,7 +127,7 @@ export default function LoginPage() {
 
       router.push('/home');
     } catch (err) {
-      console.error('[LoginPage] Guest creation failed:', err);
+      console.error('[LoginPage] Guest access failed:', err);
       setError('Failed to connect to backend for guest setup.');
     } finally {
       setLoading(false);
@@ -191,11 +201,11 @@ export default function LoginPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={createGuestAccount}
+              onClick={handlePatientAccess}
               disabled={loading}
               className="w-full rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 disabled:opacity-50"
             >
-              Continue as Guest
+              Continue as Patient
             </button>
             <button
               type="button"
