@@ -188,6 +188,17 @@ export default function LoginPage() {
             </motion.p>
           )}
 
+          {loading && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.4, 0.9, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              className="text-center text-red-400 text-xs font-light tracking-wide italic"
+            >
+              Please wait a moment... Our server runs on a free tier and may take a few seconds to wake up.
+            </motion.p>
+          )}
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
