@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import Navbar from '../../../../components/Nav';
+
 import {
   FiPaperclip,
   FiSend,
@@ -35,6 +37,11 @@ const ChatWindow = () => {
   const roomId = id ?? 'default-chat-room';
 
   const { user } = useUser();
+
+  // Check if the user is a doctor or patient
+  const isDoctor =
+    user?.role?.toLowerCase() === 'doc' ||
+    user?.role?.toLowerCase() === 'doctor';
 
   // Retrieve predefined Doctor details
   const doctor = useMemo(() => {
@@ -178,7 +185,9 @@ const ChatWindow = () => {
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[500px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
-      
+      {/* Show Navbar ONLY if the user is NOT a doctor */}
+      {!isDoctor && <Navbar />}
+
       {/* 1. Header: Always Predefined Doctor Info */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
         <div className="relative flex-shrink-0">
@@ -218,7 +227,7 @@ const ChatWindow = () => {
                     : 'bg-[#182533] text-slate-100 rounded-bl-xs border border-slate-800'
                 }`}
               >
-                {/* Outgoing (Patient point of view) */}
+                {/* Outgoing */}
                 {isMe ? (
                   <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-sky-200 mb-1">
                     <span>{patientName}</span>
@@ -227,7 +236,7 @@ const ChatWindow = () => {
                     </span>
                   </div>
                 ) : (
-                  /* Incoming (Doctor response) */
+                  /* Incoming */
                   <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 mb-1">
                     <span className="w-4 h-4 rounded-full bg-emerald-900 text-emerald-200 flex items-center justify-center text-[9px] font-bold">
                       {doctorInitial}

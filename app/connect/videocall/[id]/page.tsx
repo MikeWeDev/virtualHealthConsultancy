@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useRouter, useParams } from 'next/navigation';
 import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiLogOut } from 'react-icons/fi';
+import Navbar from '../../../components/Nav';
+import { useUser } from '../../context/UserContext';
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -19,6 +21,13 @@ const ICE_SERVERS = {
 export default function VideoCall() {
   const { id } = useParams() as { id: string };
   const roomId = id;
+
+  const { user } = useUser();
+
+  // Check if the user is a doctor or patient
+  const isDoctor =
+    user?.role?.toLowerCase() === 'doc' ||
+    user?.role?.toLowerCase() === 'doctor';
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -55,16 +64,15 @@ export default function VideoCall() {
     };
 
     // 3. Initialize Socket Connection to Render Backend
-   const socketInstance = io(BACKEND_URL, {
+    const socketInstance = io(BACKEND_URL, {
       path: '/api/socket',
       withCredentials: true,
-      // Change order to 'polling' first so HTTP handshakes hold open while Render boots
       transports: ['polling', 'websocket'],
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 10, // Increase retry attempts for cold starts
-      reconnectionDelay: 3000,  // Wait 3s between retries
-      timeout: 60000,           // Give Render up to 60 seconds to wake up
+      reconnectionAttempts: 10,
+      reconnectionDelay: 3000,
+      timeout: 60000,
     });
     socket.current = socketInstance;
 
@@ -212,73 +220,78 @@ export default function VideoCall() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-5xl bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
-        
-        {/* Connection Banner */}
-        <div className="bg-slate-700/50 px-6 py-2 text-center text-sm font-medium text-slate-300">
-          Status: <span className="text-blue-400 font-semibold">{connectionStatus}</span>
-        </div>
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between">
+      {/* Show Navbar ONLY if the user is NOT a doctor */}
+      {!isDoctor && <Navbar />}
 
-        {/* Video Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-          <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
-              You {muted && '(Muted)'}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-5xl bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+          
+          {/* Connection Banner */}
+          <div className="bg-slate-700/50 px-6 py-2 text-center text-sm font-medium text-slate-300">
+            Status: <span className="text-blue-400 font-semibold">{connectionStatus}</span>
+          </div>
+
+          {/* Video Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
+                You {muted && '(Muted)'}
+              </div>
+            </div>
+
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
+                Partner
+              </div>
             </div>
           </div>
 
-          <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-xs font-semibold">
-              Partner
-            </div>
+          {/* Action Controls */}
+          <div className="flex justify-center items-center gap-6 bg-slate-900/80 p-4 border-t border-slate-700">
+            <button
+              onClick={toggleMute}
+              className={`p-4 rounded-full transition ${
+                muted ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
+              }`}
+              title={muted ? 'Unmute' : 'Mute'}
+            >
+              {muted ? <FiMicOff size={24} /> : <FiMic size={24} />}
+            </button>
+
+            <button
+              onClick={toggleVideo}
+              className={`p-4 rounded-full transition ${
+                videoOff ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
+              }`}
+              title={videoOff ? 'Turn Video On' : 'Turn Video Off'}
+            >
+              {videoOff ? <FiVideoOff size={24} /> : <FiVideo size={24} />}
+            </button>
+
+            <button
+              onClick={leaveCall}
+              className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition"
+              title="Leave Call"
+            >
+              <FiLogOut size={24} />
+            </button>
           </div>
+
         </div>
-
-        {/* Action Controls */}
-        <div className="flex justify-center items-center gap-6 bg-slate-900/80 p-4 border-t border-slate-700">
-          <button
-            onClick={toggleMute}
-            className={`p-4 rounded-full transition ${
-              muted ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
-            }`}
-            title={muted ? 'Unmute' : 'Mute'}
-          >
-            {muted ? <FiMicOff size={24} /> : <FiMic size={24} />}
-          </button>
-
-          <button
-            onClick={toggleVideo}
-            className={`p-4 rounded-full transition ${
-              videoOff ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-600'
-            }`}
-            title={videoOff ? 'Turn Video On' : 'Turn Video Off'}
-          >
-            {videoOff ? <FiVideoOff size={24} /> : <FiVideo size={24} />}
-          </button>
-
-          <button
-            onClick={leaveCall}
-            className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition"
-            title="Leave Call"
-          >
-            <FiLogOut size={24} />
-          </button>
-        </div>
-
       </div>
     </div>
   );
