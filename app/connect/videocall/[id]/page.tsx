@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useRouter, useParams } from 'next/navigation';
-import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiLogOut } from 'react-icons/fi';
+import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiLogOut, FiArrowLeft } from 'react-icons/fi';
 import Navbar from '../../../../components/Nav';
 import { useUser } from '../../../context/UserContext';
 
@@ -220,21 +220,37 @@ export default function VideoCall() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between">
+    <div className={`bg-slate-900 text-white flex flex-col justify-between ${isDoctor ? 'h-screen' : 'min-h-screen'}`}>
       {/* Show Navbar ONLY if the user is NOT a doctor */}
       {!isDoctor && <Navbar />}
 
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-5xl bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+      <div className={`flex-1 flex items-center justify-center ${isDoctor ? 'p-0 md:p-6' : 'p-4'}`}>
+        <div className={`w-full bg-slate-800 shadow-xl overflow-hidden border border-slate-700 flex flex-col justify-between ${
+          isDoctor ? 'h-full max-w-none rounded-none md:rounded-2xl' : 'max-w-5xl rounded-2xl'
+        }`}>
           
-          {/* Connection Banner */}
-          <div className="bg-slate-700/50 px-6 py-2 text-center text-sm font-medium text-slate-300">
-            Status: <span className="text-blue-400 font-semibold">{connectionStatus}</span>
+          {/* Connection Banner with Doctor Back Button */}
+          <div className="bg-slate-700/50 px-6 py-3 flex items-center justify-between text-sm font-medium text-slate-300">
+            <div className="flex items-center gap-3">
+              {isDoctor && (
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="p-1.5 -ml-2 text-slate-300 hover:text-white hover:bg-slate-600/50 rounded-full transition flex-shrink-0"
+                  title="Go to previous page"
+                >
+                  <FiArrowLeft className="w-5 h-5" />
+                </button>
+              )}
+              <span>
+                Status: <span className="text-blue-400 font-semibold">{connectionStatus}</span>
+              </span>
+            </div>
           </div>
 
           {/* Video Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 flex-1 items-center">
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video w-full">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -247,7 +263,7 @@ export default function VideoCall() {
               </div>
             </div>
 
-            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video">
+            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video w-full">
               <video
                 ref={remoteVideoRef}
                 autoPlay

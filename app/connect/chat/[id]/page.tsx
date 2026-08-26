@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import Navbar from '../../../../components/Nav';
 
@@ -11,6 +11,7 @@ import {
   FiX,
   FiFile,
   FiCheck,
+  FiArrowLeft,
 } from 'react-icons/fi';
 import { useUser } from '../../../context/UserContext';
 import doctorData from '../../../doctor/ProductPage';
@@ -36,6 +37,7 @@ const ChatWindow = () => {
   const { id } = useParams() as { id?: string };
   const roomId = id ?? 'default-chat-room';
 
+  const router = useRouter();
   const { user } = useUser();
 
   // Check if the user is a doctor or patient
@@ -184,12 +186,30 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col h-[100dvh] md:h-[500px] bg-[#0e1621] md:rounded-xl shadow-2xl overflow-hidden border-0 md:border border-slate-800">
+    <div
+      className={`w-full mx-auto flex flex-col bg-[#0e1621] overflow-hidden ${
+        isDoctor
+          ? 'h-[100dvh] md:h-screen rounded-none border-0 max-w-none'
+          : 'h-[100dvh] md:h-[500px] max-w-2xl md:rounded-xl shadow-2xl border-0 md:border border-slate-800'
+      }`}
+    >
       {/* Show Navbar ONLY if the user is NOT a doctor */}
       {!isDoctor && <Navbar />}
 
       {/* 1. Header: Always Predefined Doctor Info */}
       <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
+        {/* Back button visible ONLY for Doctors */}
+        {isDoctor && (
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="p-2 -ml-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-full transition flex-shrink-0"
+            title="Go to previous page"
+          >
+            <FiArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+
         <div className="relative flex-shrink-0">
           <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-base shadow-inner">
             {doctorInitial}
