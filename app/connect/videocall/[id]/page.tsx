@@ -15,6 +15,9 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
   ],
 };
 
@@ -35,6 +38,7 @@ export default function VideoCall() {
   const socket = useRef<Socket | null>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const candidateQueue = useRef<RTCIceCandidateInit[]>([]);
 
   const [muted, setMuted] = useState(false);
@@ -47,23 +51,34 @@ export default function VideoCall() {
 
     let isMounted = true;
 
-    // 1. Initialize WebRTC PeerConnection
-    const peerConnection = new RTCPeerConnection(ICE_SERVERS);
-    pc.current = peerConnection;
-
-    // 2. Setup Remote Stream Receiver
+    // 1. Setup Remote MediaStream
     const remoteStream = new MediaStream();
+    remoteStreamRef.current = remoteStream;
+
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
 
+    // 2. Initialize WebRTC PeerConnection
+    const peerConnection = new RTCPeerConnection(ICE_SERVERS);
+    pc.current = peerConnection;
+
+    // 3. Attach Track Event Listener
     peerConnection.ontrack = (event) => {
       event.streams[0].getTracks().forEach((track) => {
-        remoteStream.addTrack(track);
+        if (!remoteStream.getTracks().some((t) => t.id === track.id)) {
+          remoteStream.addTrack(track);
+        }
       });
+
+      // Ensure video element receives updated stream and plays
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.play().catch((e) => console.log('Autoplay error:', e));
+      }
     };
 
-    // 3. Initialize Socket Connection to Render Backend
+    // 4. Initialize Socket Connection
     const socketInstance = io(BACKEND_URL, {
       path: '/api/socket',
       withCredentials: true,
@@ -76,7 +91,7 @@ export default function VideoCall() {
     });
     socket.current = socketInstance;
 
-    // 4. ICE Candidate Emission
+    // 5. ICE Candidate Emission
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         socketInstance.emit('signal', {
@@ -87,7 +102,16 @@ export default function VideoCall() {
       }
     };
 
-    // 5. Get User Local Media
+    peerConnection.onconnectionstatechange = () => {
+      if (!isMounted) return;
+      if (peerConnection.connectionState === 'connected') {
+        setConnectionStatus('Connected');
+      } else if (peerConnection.connectionState === 'failed') {
+        setConnectionStatus('Connection Failed. Reconnecting...');
+      }
+    };
+
+    // 6. Get User Local Media & Setup Tracks
     async function startLocalStream() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -104,7 +128,6 @@ export default function VideoCall() {
           peerConnection.addTrack(track, stream);
         });
 
-        // Join the WebRTC room
         socketInstance.emit('join', roomId);
         setConnectionStatus('Waiting for partner...');
       } catch (err) {
@@ -115,7 +138,7 @@ export default function VideoCall() {
 
     startLocalStream();
 
-    // 6. Handle Socket Signaling Events
+    // 7. Handle Socket Signaling Events
     socketInstance.on('user-joined', async () => {
       setConnectionStatus('Partner joined. Creating offer...');
       try {
@@ -140,7 +163,7 @@ export default function VideoCall() {
           setConnectionStatus('Connecting...');
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
 
-          // Process queued candidates
+          // Process queued ICE candidates
           while (candidateQueue.current.length > 0) {
             const cand = candidateQueue.current.shift();
             if (cand) await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
@@ -156,9 +179,15 @@ export default function VideoCall() {
           });
         } else if (data.type === 'answer') {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          
+          // Process queued ICE candidates that arrived before Answer
+          while (candidateQueue.current.length > 0) {
+            const cand = candidateQueue.current.shift();
+            if (cand) await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+          }
           setConnectionStatus('Connected');
         } else if (data.type === 'candidate' && data.candidate) {
-          if (peerConnection.remoteDescription) {
+          if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
             await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
           } else {
             candidateQueue.current.push(data.candidate);
@@ -176,7 +205,6 @@ export default function VideoCall() {
       }
     });
 
-    // Cleanup tracks, sockets, and connections on unmount
     return () => {
       isMounted = false;
       if (localStream.current) {
@@ -263,7 +291,7 @@ export default function VideoCall() {
               </div>
             </div>
 
-            <div className="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-700 aspect-video w-full">
+            <div className="relative bg-slate-[#030712] rounded-xl overflow-hidden border border-slate-700 aspect-video w-full">
               <video
                 ref={remoteVideoRef}
                 autoPlay
