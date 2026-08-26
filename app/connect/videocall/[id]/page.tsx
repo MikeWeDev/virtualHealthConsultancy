@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useRouter, useParams } from 'next/navigation';
 import { FiMic, FiMicOff, FiVideo, FiVideoOff, FiLogOut } from 'react-icons/fi';
-import Navbar from '../../../components/Nav';
-import { useUser } from '../../context/UserContext';
+import Navbar from '../../../../components/Nav';
+import { useUser } from '../../../context/UserContext';
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_URL ||
