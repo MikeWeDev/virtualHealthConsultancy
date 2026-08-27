@@ -121,10 +121,11 @@ export default function Navbar() {
     </button>
   </div>
 ) : (
-            <Link
-              href="/"
-              className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
-            >
+           <Link
+  href="/"
+  onClick={() => setMenuOpen(false)}
+  className="flex items-center gap-3 group"
+>
               Login
             </Link>
           )}
