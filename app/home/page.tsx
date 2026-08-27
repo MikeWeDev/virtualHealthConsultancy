@@ -125,10 +125,17 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const filteredDoctors = newDatas.filter((item) =>
-    search ? item.fName?.toLowerCase().includes(search.toLowerCase()) || item.Name?.toLowerCase().includes(search.toLowerCase()) : true
-  );
+ const filteredDoctors = newDatas.filter((item) => {
+  const query = search.trim().toLowerCase();
 
+  if (!query) return true;
+
+  return (
+    item.fName?.toLowerCase().includes(query) ||
+    item.Name?.toLowerCase().includes(query) ||
+    item.type?.toLowerCase().includes(query)
+  );
+});
   const displayedDoctors = filteredDoctors.slice(0, visibleCount);
 
   const toggleShowAll = () => {
