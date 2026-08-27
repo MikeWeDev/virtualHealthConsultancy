@@ -99,30 +99,28 @@ export default function Navbar() {
 
         {/* Desktop Call to Action */}
         <div className="hidden items-center gap-3 md:flex">
-          {user ? (
-            <>
-              <Link
-                href={dashboardHref}
-                onClick={(event) => {
-                  if (!user) {
-                    event.preventDefault();
-                    return;
-                  }
-                }}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400"
-                aria-label={`Go to ${user?.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
-              >
-                {userInitial}
-              </Link>
-           
-              <button
-                onClick={() => logout()}
-                className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
+        {user ? (
+  <div className="flex gap-3">
+    <Link
+      href={dashboardHref}
+      onClick={() => setMenuOpen(false)}
+      className="flex-1 rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+      aria-label={`Go to ${user.role === 'doctor' ? 'doctor' : 'patient'} dashboard`}
+    >
+      {userInitial}
+    </Link>
+
+    <button
+      onClick={() => {
+        logout();
+        setMenuOpen(false);
+      }}
+      className="flex-1 rounded-full bg-red-500 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-red-400"
+    >
+      Logout
+    </button>
+  </div>
+) : (
             <Link
               href="/"
               className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
