@@ -195,7 +195,7 @@ export default function LoginPage() {
               transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
               className="text-center text-red-400 text-xs font-light tracking-wide italic"
             >
-              Please wait a moment... Our server runs on a free tier and may take a few seconds to wake up.
+              Please wait a moment... Our server runs on a free tier and may take a few seconds to wake up...
             </motion.p>
           )}
 
