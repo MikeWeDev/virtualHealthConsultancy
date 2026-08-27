@@ -149,17 +149,31 @@ export default function Home() {
   const currentReview = reviews[reviewIndex];
 
   const renderStars = (rating: number) => {
-    return (
-      <div className="inline-flex gap-1 text-amber-400">
-        {[...Array(5)].map((_, i) => (
-          <Star 
-            key={i} 
-            className={`h-5 w-5 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} 
+  return (
+    <div
+      className="inline-flex gap-1 text-amber-400"
+      aria-label={`${rating} out of 5 stars`}
+    >
+      {[...Array(5)].map((_, i) => {
+        const isFull = i < Math.floor(rating);
+        const isHalf = rating % 1 !== 0 && i === Math.floor(rating);
+
+        return (
+          <Star
+            key={i}
+            className={`h-5 w-5 ${
+              isFull
+                ? "fill-amber-400 text-amber-400"
+                : isHalf
+                ? "fill-amber-400/50 text-amber-400"
+                : "text-slate-300"
+            }`}
           />
-        ))}
-      </div>
-    );
-  };
+        );
+      })}
+    </div>
+  );
+};
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white">
