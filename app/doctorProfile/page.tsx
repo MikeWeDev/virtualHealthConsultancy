@@ -64,16 +64,22 @@ const DoctorDashboard = () => {
   }, [upcomingBooking]);
 
   useEffect(() => {
-    if (!initialized) return;
-    const cookieUser = parseUserCookie();
-    if (!user && !cookieUser) {
-      router.push('/');
-      return;
-    }
-    if (user?.role === 'patient') {
-      router.push('/home');
-    }
-  }, [initialized, user, router]);
+  if (!initialized) return;
+
+  const cookieUser = parseUserCookie();
+  const activeUser = user || cookieUser;
+
+  // 1. Not authenticated -> Redirect to Login/Landing
+  if (!activeUser) {
+    router.push('/');
+    return;
+  }
+
+  // 2. Explicitly verify role -> Only redirect if role is definitively 'patient'
+  if (activeUser.role === 'patient') {
+    router.push('/home');
+  }
+}, [initialized, user, router]);
 
   if (!initialized) {
     return (
