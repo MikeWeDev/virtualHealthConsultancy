@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import Navbar from '../../../../components/Nav';
 
 import {
   FiPaperclip,
@@ -186,33 +185,18 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-950 flex flex-col overflow-hidden">
-      {/* Show Navbar ONLY if the user is NOT a doctor */}
-      {!isDoctor && <Navbar />}
-
-      {/* Main Container */}
-      <div className="flex-1 flex items-center justify-center p-0 md:p-4 overflow-hidden">
-        <div
-          className={`w-full mx-auto flex flex-col bg-[#0e1621] overflow-hidden ${
-            isDoctor
-              ? 'h-full rounded-none border-0 max-w-none'
-              : 'h-full md:h-[500px] max-w-2xl md:rounded-xl shadow-2xl border-0 md:border border-slate-800'
-          }`}
-        >
-          {/* 1. Header: Always Predefined Doctor Info */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
-            {/* Back button visible ONLY for Doctors */}
-            {isDoctor && (
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="p-2 -ml-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-full transition flex-shrink-0"
-                title="Go to previous page"
-              >
-                <FiArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-
+    <div className="fixed inset-0 w-full h-full bg-slate-950 flex flex-col items-center justify-center p-2 md:p-6 overflow-hidden z-50">
+      <div
+        className={`w-full flex flex-col bg-[#0e1621] overflow-hidden shadow-2xl border border-slate-800 ${
+          isDoctor
+            ? 'h-full rounded-none max-w-none border-0'
+            : 'h-[70vh] md:h-[650px] max-w-2xl rounded-xl'
+        }`}
+      >
+        {/* 1. Header: Doctor Info on Left, Back Button on Right */}
+        <div className="flex items-center justify-between px-4 py-3 bg-[#17212b] border-b border-slate-800 select-none flex-shrink-0">
+          {/* Left side: Avatar & Info */}
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex-shrink-0">
               <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-base shadow-inner">
                 {doctorInitial}
@@ -223,7 +207,7 @@ const ChatWindow = () => {
                 }`}
               />
             </div>
-            <div className="flex flex-col flex-1 min-w-0">
+            <div className="flex flex-col min-w-0">
               <h2 className="text-white font-medium text-base truncate">
                 {doctorName}
               </h2>
@@ -233,151 +217,162 @@ const ChatWindow = () => {
             </div>
           </div>
 
-          {/* 2. Messages Container */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#0e1621]">
-            {messages.map((msg) => {
-              const isMe = msg.senderId === mySocketId;
+          {/* Right side: Back Button */}
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-lg transition flex-shrink-0"
+            title="Go back to previous page"
+          >
+            <FiArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+        </div>
 
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`group relative max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow-md break-words ${
-                      isMe
-                        ? 'bg-[#2b5278] text-white rounded-br-xs'
-                        : 'bg-[#182533] text-slate-100 rounded-bl-xs border border-slate-800'
-                    }`}
-                  >
-                    {/* Outgoing */}
-                    {isMe ? (
-                      <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-sky-200 mb-1">
-                        <span>{patientName}</span>
-                        <span className="w-4 h-4 rounded-full bg-sky-700 text-white flex items-center justify-center text-[9px] font-bold">
-                          {patientInitial}
-                        </span>
-                      </div>
-                    ) : (
-                      /* Incoming */
-                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 mb-1">
-                        <span className="w-4 h-4 rounded-full bg-emerald-900 text-emerald-200 flex items-center justify-center text-[9px] font-bold">
-                          {doctorInitial}
-                        </span>
-                        <span>{doctorName}</span>
-                      </div>
-                    )}
+        {/* 2. Messages Container */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[#0e1621]">
+          {messages.map((msg) => {
+            const isMe = msg.senderId === mySocketId;
 
-                    {msg.file && (
-                      <div className="mb-2">
-                        {msg.file.type.startsWith('image/') ? (
-                          <img
-                            src={msg.file.data}
-                            alt={msg.file.name}
-                            className="rounded-lg max-h-60 w-full object-cover"
-                          />
-                        ) : (
-                          <a
-                            href={msg.file.data}
-                            download={msg.file.name}
-                            className="flex items-center gap-2 p-2 bg-black/20 rounded-lg hover:bg-black/30 transition text-sky-300"
-                          >
-                            <FiFile className="w-6 h-6 flex-shrink-0" />
-                            <span className="text-xs truncate max-w-[180px]">
-                              {msg.file.name}
-                            </span>
-                          </a>
-                        )}
-                      </div>
-                    )}
-
-                    {msg.content && <p className="leading-relaxed">{msg.content}</p>}
-
-                    <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
-                      <span>{msg.timestamp || 'Just now'}</span>
-                      {isMe && <FiCheck className="w-3 h-3 text-sky-300" />}
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteMessage(msg.id)}
-                      className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                      title="Delete message"
-                    >
-                      <FiX className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* 3. Attachment Preview */}
-          {file && (
-            <div className="flex items-center justify-between px-4 py-2 bg-[#17212b] border-t border-slate-800 text-xs text-slate-200 flex-shrink-0">
-              <div className="flex items-center gap-2 truncate">
-                {filePreview ? (
-                  <img
-                    src={filePreview}
-                    alt="Preview"
-                    className="w-8 h-8 rounded object-cover"
-                  />
-                ) : (
-                  <FiFile className="w-5 h-5 text-sky-400" />
-                )}
-                <span className="truncate max-w-[200px] font-medium">
-                  {file.name}
-                </span>
-              </div>
-              <button
-                onClick={removeFile}
-                className="p-1 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition"
+            return (
+              <div
+                key={msg.id}
+                className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
               >
-                <FiX className="w-4 h-4" />
-              </button>
+                <div
+                  className={`group relative max-w-[85%] sm:max-w-[70%] px-3 py-2 rounded-2xl text-sm shadow-md break-words ${
+                    isMe
+                      ? 'bg-[#2b5278] text-white rounded-br-xs'
+                      : 'bg-[#182533] text-slate-100 rounded-bl-xs border border-slate-800'
+                  }`}
+                >
+                  {/* Outgoing */}
+                  {isMe ? (
+                    <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-sky-200 mb-1">
+                      <span>{patientName}</span>
+                      <span className="w-4 h-4 rounded-full bg-sky-700 text-white flex items-center justify-center text-[9px] font-bold">
+                        {patientInitial}
+                      </span>
+                    </div>
+                  ) : (
+                    /* Incoming */
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 mb-1">
+                      <span className="w-4 h-4 rounded-full bg-emerald-900 text-emerald-200 flex items-center justify-center text-[9px] font-bold">
+                        {doctorInitial}
+                      </span>
+                      <span>{doctorName}</span>
+                    </div>
+                  )}
+
+                  {msg.file && (
+                    <div className="mb-2">
+                      {msg.file.type.startsWith('image/') ? (
+                        <img
+                          src={msg.file.data}
+                          alt={msg.file.name}
+                          className="rounded-lg max-h-60 w-full object-cover"
+                        />
+                      ) : (
+                        <a
+                          href={msg.file.data}
+                          download={msg.file.name}
+                          className="flex items-center gap-2 p-2 bg-black/20 rounded-lg hover:bg-black/30 transition text-sky-300"
+                        >
+                          <FiFile className="w-6 h-6 flex-shrink-0" />
+                          <span className="text-xs truncate max-w-[180px]">
+                            {msg.file.name}
+                          </span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {msg.content && <p className="leading-relaxed">{msg.content}</p>}
+
+                  <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
+                    <span>{msg.timestamp || 'Just now'}</span>
+                    {isMe && <FiCheck className="w-3 h-3 text-sky-300" />}
+                  </div>
+
+                  <button
+                    onClick={() => handleDeleteMessage(msg.id)}
+                    className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    title="Delete message"
+                  >
+                    <FiX className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* 3. Attachment Preview */}
+        {file && (
+          <div className="flex items-center justify-between px-4 py-2 bg-[#17212b] border-t border-slate-800 text-xs text-slate-200 flex-shrink-0">
+            <div className="flex items-center gap-2 truncate">
+              {filePreview ? (
+                <img
+                  src={filePreview}
+                  alt="Preview"
+                  className="w-8 h-8 rounded object-cover"
+                />
+              ) : (
+                <FiFile className="w-5 h-5 text-sky-400" />
+              )}
+              <span className="truncate max-w-[200px] font-medium">
+                {file.name}
+              </span>
             </div>
-          )}
-
-          {/* 4. Bottom Input */}
-          <div className="p-2 sm:p-3 bg-[#17212b] border-t border-slate-800 flex items-center gap-2 flex-shrink-0">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
             <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 text-slate-400 hover:text-sky-400 rounded-full hover:bg-slate-800 transition flex-shrink-0"
-              title="Attach file"
+              onClick={removeFile}
+              className="p-1 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition"
             >
-              <FiPaperclip className="w-5 h-5" />
-            </button>
-
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Write a message..."
-              className="flex-1 bg-[#0e1621] text-white placeholder-slate-500 text-sm rounded-full px-4 py-2.5 focus:outline-none border border-slate-800 focus:border-sky-500 transition"
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            />
-
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!newMessage.trim() && !file}
-              className={`p-2.5 rounded-full transition flex-shrink-0 ${
-                newMessage.trim() || file
-                  ? 'bg-sky-500 text-white hover:bg-sky-400 cursor-pointer'
-                  : 'bg-slate-800 text-slate-600 cursor-not-allowed'
-              }`}
-            >
-              <FiSend className="w-5 h-5" />
+              <FiX className="w-4 h-4" />
             </button>
           </div>
+        )}
+
+        {/* 4. Bottom Input */}
+        <div className="p-2 sm:p-3 bg-[#17212b] border-t border-slate-800 flex items-center gap-2 flex-shrink-0">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 text-slate-400 hover:text-sky-400 rounded-full hover:bg-slate-800 transition flex-shrink-0"
+            title="Attach file"
+          >
+            <FiPaperclip className="w-5 h-5" />
+          </button>
+
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Write a message..."
+            className="flex-1 bg-[#0e1621] text-white placeholder-slate-500 text-sm rounded-full px-4 py-2.5 focus:outline-none border border-slate-800 focus:border-sky-500 transition"
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          />
+
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!newMessage.trim() && !file}
+            className={`p-2.5 rounded-full transition flex-shrink-0 ${
+              newMessage.trim() || file
+                ? 'bg-sky-500 text-white hover:bg-sky-400 cursor-pointer'
+                : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+            }`}
+          >
+            <FiSend className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>
