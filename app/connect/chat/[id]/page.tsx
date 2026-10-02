@@ -186,17 +186,17 @@ const ChatWindow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Show Navbar ONLY if the user is NOT a doctor, positioned properly at the top */}
+    <div className="h-screen w-full bg-slate-950 flex flex-col overflow-hidden">
+      {/* Show Navbar ONLY if the user is NOT a doctor */}
       {!isDoctor && <Navbar />}
 
-      {/* Outer page content container with contrasting background */}
-      <div className="flex-1 flex items-center justify-center p-0 md:p-6">
+      {/* Main Container */}
+      <div className="flex-1 flex items-center justify-center p-0 md:p-4 overflow-hidden">
         <div
           className={`w-full mx-auto flex flex-col bg-[#0e1621] overflow-hidden ${
             isDoctor
-              ? 'h-[100dvh] md:h-screen rounded-none border-0 max-w-none'
-              : 'h-[100dvh] md:h-[600px] max-w-2xl md:rounded-xl shadow-2xl border-0 md:border border-slate-800'
+              ? 'h-full rounded-none border-0 max-w-none'
+              : 'h-full md:h-[500px] max-w-2xl md:rounded-xl shadow-2xl border-0 md:border border-slate-800'
           }`}
         >
           {/* 1. Header: Always Predefined Doctor Info */}
