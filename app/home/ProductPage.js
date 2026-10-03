@@ -7,7 +7,6 @@
         amount: 1,
         img: "/doctorList/doctor1.jpg",
         price: `${34}$`,
-        color: "black",
         time: "new",
         type: "Cardiologist"
     },
@@ -18,7 +17,6 @@
         amount: 1,
         price: `${45}$`,
         img: "/doctorList/doctor2.jpg",
-        color: "others",
         type: "Dermatologist",
         time: "old"
     },
@@ -29,7 +27,6 @@
         amount: 1,
         price: `${80}$`,
         img: "/doctorList/doctor3.jpg",
-        color: "white",
         type: "Pediatrician",
         time: "new",
     },
@@ -40,7 +37,6 @@
         amount: 1,
         price: `${76}$`,
         img: "/doctorList/doctor4.jpg",
-        color: "black",
         type: "Orthopedic Surgeon",
         time: "old"
     },
@@ -51,7 +47,6 @@
         amount: 1,
         price: `${124}$`,
         img: "/doctorList/doctor5.jpg",
-        color: "yellow",
         type: "Neurologist",
         time: "new"
     },
@@ -63,7 +58,6 @@
         price: `${18}$`,
         img: "/doctorList/doctor6.jpg",
         type: "Psychiatrist",
-        color: "others",
         time: "old"
     },
     {
@@ -74,7 +68,6 @@
         price: `${90}$`,
         img: "/doctorList/doctor7.jpg",
         type: "Gynecologist",
-        color: "brown",
         time: "new"
     },
     {
@@ -85,7 +78,6 @@
         price: `${38}$`,
         img: "/doctorList/doctor8.jpg",
         type: "Surgeon",
-        color: "black",
         time: "new"
     },
     {
@@ -96,7 +88,6 @@
         price: `${176}$`,
         img: "/doctorList/doctor9.jpg",
         type: "Plastic Surgeon",
-        color: "black",
         time: "old",
     },
     {
@@ -107,7 +98,6 @@
         price: `${118}$`,
         img: "/doctorList/doctor10.jpg",
         type: "Ophthalmologist",
-        color: "black",
         time: "new",
     },
     {
@@ -118,7 +108,6 @@
         price: `${90}$`,
         img: "/doctorList/doctor11.jpg",
         type: "ENT Specialist",
-        color: "others",
         time: "old",
     },
     {
@@ -129,7 +118,6 @@
         price: `${66}$`,
         img: "/doctorList/doctor12.jpg",
         type: "Dentist",
-        color: "others",
         time: "new"
     },
     {
@@ -140,7 +128,6 @@
         price: `${76}$`,
         img: "/doctorList/doctor13.jpg",
         type: "Endocrinologist",
-        color: "white",
         time: "old"
     },
     {
@@ -151,7 +138,6 @@
         price: `${89}$`,
         img: "/doctorList/doctor14.jpg",
         type: "Family Medicine",
-        color: "black",
         time: "new",
     },
     {
@@ -162,7 +148,6 @@
         price: `${56}$`,
         img: "/doctorList/doctor15.jpg",
         type: "Rheumatologist",
-        color: "others",
         time: "old",
     },
     {
@@ -172,7 +157,6 @@
         amount: 1,
         price: `${46}$`,
         img: "/doctorList/doctor16.jpg",
-        color: "black",
         time: "new",
     },
    
