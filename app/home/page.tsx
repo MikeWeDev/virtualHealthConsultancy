@@ -459,7 +459,7 @@ export default function Home() {
                         <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
                           {doctorName}
                         </h3>
-                        <p className="text-xs text-zinc-400 font-medium">{item.color || 'Senior Practitioner'}</p>
+                        <p className="text-xs text-zinc-400 font-medium">{'Senior Practitioner'}</p>
                       </div>
                     </div>
 
