@@ -25,7 +25,8 @@ import {
   Activity,
   Award,
   CheckCircle2,
-  Stethoscope
+  Stethoscope,
+  X
 } from 'lucide-react';
 import newDatas from './ProductPage';
 
@@ -408,7 +409,9 @@ export default function Home() {
             {/* Search Input */}
             <div className="relative w-full max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <label htmlFor="doctor-search" className="sr-only">Search doctors</label>
               <input
+                id="doctor-search"
                 type="search"
                 value={search}
                 onChange={(e) => {
@@ -416,8 +419,21 @@ export default function Home() {
                   setVisibleCount(9); // Reset count when filtering
                 }}
                 placeholder="Search doctor name or specialty..."
-                className="w-full rounded-2xl border border-zinc-700/80 bg-zinc-900/90 py-3.5 pr-4 pl-11 text-sm text-white placeholder-zinc-500 shadow-inner outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 backdrop-blur-md"
+                className="w-full rounded-2xl border border-zinc-700/80 bg-zinc-900/90 py-3.5 pr-12 pl-11 text-sm text-white placeholder-zinc-500 shadow-inner outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 backdrop-blur-md"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setVisibleCount(9);
+                  }}
+                  aria-label="Clear doctor search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
 
