@@ -270,7 +270,7 @@ export default function Home() {
                       alt="Healthcare professional"
                       fill
                       priority={index === 0}
-                      className={`object-fill transition-all duration-1000 ease-in-out ${
+                      className={`object-cover transition-all duration-1000 ease-in-out ${
                         index === heroIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
                       }`}
                     />
@@ -443,7 +443,7 @@ export default function Home() {
                             src={item.img} 
                             alt={doctorName} 
                             fill
-                            className="object-fill transition-transform duration-700 group-hover:scale-105" 
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-zinc-800 text-2xl font-bold text-zinc-500 uppercase">
