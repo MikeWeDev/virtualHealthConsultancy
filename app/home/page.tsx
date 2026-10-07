@@ -437,6 +437,17 @@ export default function Home() {
             </div>
           </div>
 
+          <p
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="-mt-4 text-sm text-zinc-400"
+          >
+            {filteredDoctors.length === 0
+              ? 'No matching specialists'
+              : `Showing ${displayedDoctors.length} of ${filteredDoctors.length} ${filteredDoctors.length === 1 ? 'specialist' : 'specialists'}`}
+          </p>
+
           {displayedDoctors.length === 0 ? (
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/30 p-12 text-center text-zinc-400 space-y-3">
               <Search className="mx-auto h-8 w-8 text-zinc-600" />
