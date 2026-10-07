@@ -271,6 +271,7 @@ export default function Home() {
                       alt="Healthcare professional"
                       fill
                       priority={index === 0}
+                      sizes="(min-width: 1280px) 520px, (min-width: 1024px) 42vw, 100vw"
                       className={`object-cover transition-all duration-1000 ease-in-out ${
                         index === heroIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
                       }`}
@@ -361,6 +362,7 @@ export default function Home() {
                       src={service.image} 
                       alt={service.title} 
                       fill 
+                      sizes="(min-width: 1280px) 400px, (min-width: 768px) 33vw, 100vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110" 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
@@ -470,6 +472,7 @@ export default function Home() {
                             src={item.img} 
                             alt={doctorName} 
                             fill
+                            sizes="(min-width: 1280px) 400px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                         ) : (
