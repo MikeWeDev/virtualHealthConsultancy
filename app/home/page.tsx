@@ -26,7 +26,9 @@ import {
   Award,
   CheckCircle2,
   Stethoscope,
-  X
+  X,
+  Pause,
+  Play
 } from 'lucide-react';
 import newDatas from './ProductPage';
 
@@ -114,6 +116,7 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(9); // Initial 9 doctors displayed
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [isReviewsPaused, setIsReviewsPaused] = useState(false);
   const router = useRouter();
   const { user } = useUser();
 
@@ -131,11 +134,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (isReviewsPaused) return;
+
     const timer = setInterval(() => {
       setReviewIndex((current) => (current + 1) % reviews.length);
     }, 6500);
     return () => clearInterval(timer);
-  }, []);
+  }, [isReviewsPaused]);
 
   const filteredDoctors = newDatas.filter((item) => {
     const query = search.trim().toLowerCase();
@@ -568,6 +573,15 @@ export default function Home() {
 
               {/* Slider Controls */}
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-800/60">
+                <button
+                  type="button"
+                  onClick={() => setIsReviewsPaused((paused) => !paused)}
+                  aria-label={isReviewsPaused ? 'Resume automatic reviews' : 'Pause automatic reviews'}
+                  aria-pressed={isReviewsPaused}
+                  className="rounded-xl border border-zinc-700 bg-zinc-900 p-2.5 text-zinc-300 hover:bg-zinc-800 hover:text-white transition shadow-md"
+                >
+                  {isReviewsPaused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+                </button>
                 <button
                   onClick={() => setReviewIndex((prev) => (prev === 0 ? reviews.length - 1 : prev - 1))}
                   aria-label="Previous review"
