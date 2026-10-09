@@ -388,7 +388,7 @@ export default function Home() {
                   <div className="pt-4 border-t border-zinc-800/80">
                     <a 
                       href="#doctors"
-                      className="group/btn flex items-center justify-between text-xs font-semibold text-zinc-300 hover:text-emerald-400 transition-colors"
+                      className="group/btn flex items-center justify-between rounded-lg text-xs font-semibold text-zinc-300 transition-colors hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:ring-offset-4 focus:ring-offset-zinc-900"
                     >
                       <span>Book Teleconsultation</span>
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 group-hover/btn:bg-emerald-400 group-hover/btn:border-emerald-400 group-hover/btn:text-zinc-950 transition-all">
