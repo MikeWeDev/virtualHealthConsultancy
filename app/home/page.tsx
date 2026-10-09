@@ -619,7 +619,12 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Call us</p>
-                  <p className="text-base font-bold text-white">+1 (800) 123-4567</p>
+                  <a
+                    href="tel:+18001234567"
+                    className="text-base font-bold text-white transition hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950"
+                  >
+                    +1 (800) 123-4567
+                  </a>
                 </div>
               </div>
 
@@ -629,7 +634,12 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Email</p>
-                  <p className="text-base font-bold text-white">support@ethealth.com</p>
+                  <a
+                    href="mailto:support@ethealth.com"
+                    className="text-base font-bold text-white transition hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-zinc-950"
+                  >
+                    support@ethealth.com
+                  </a>
                 </div>
               </div>
 
