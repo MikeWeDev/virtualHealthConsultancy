@@ -58,6 +58,19 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    if (!userDropdownOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [userDropdownOpen]);
+
+  useEffect(() => {
     if (!user && typeof window !== "undefined") {
       const cookiePair = document.cookie
         .split("; ")
@@ -212,7 +225,10 @@ export default function Navbar() {
           {user ? (
             <div className="relative" ref={dropdownRef}>
               <button
+                type="button"
                 onClick={() => setUserDropdownOpen((prev) => !prev)}
+                aria-expanded={userDropdownOpen}
+                aria-controls="user-dropdown"
                 className="flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/90 p-1.5 pr-4 transition-all hover:border-slate-700 hover:bg-slate-800 shadow-lg"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 font-bold text-slate-950 text-sm shadow-md shadow-emerald-500/20">
@@ -227,7 +243,7 @@ export default function Navbar() {
 
               {/* USER DROPDOWN MENU */}
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-slate-800 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+                <div id="user-dropdown" className="absolute right-0 mt-3 w-56 rounded-2xl border border-slate-800 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3 py-2 border-b border-slate-800/80 mb-1">
                     <p className="text-xs font-semibold text-slate-400">Signed in as</p>
                     <p className="text-sm font-bold text-white truncate">{user.name}</p>
