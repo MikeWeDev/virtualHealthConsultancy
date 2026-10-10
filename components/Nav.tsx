@@ -137,7 +137,7 @@ export default function Navbar() {
         
         {/* BRAND LOGO */}
         <Link
-          href="/"
+          href={rootPath}
           onClick={closeMenu}
           className="group flex items-center gap-3.5 outline-none"
         >
