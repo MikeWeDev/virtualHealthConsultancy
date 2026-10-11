@@ -56,7 +56,7 @@ export default function DoctorLoginPage() {
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-800 px-3 py-1">ID {doctor.id}</span>
-                  <span className="rounded-full bg-slate-800 px-3 py-1">{doctor.color}</span>
+                  <span className="rounded-full bg-slate-800 px-3 py-1">From {doctor.price}</span>
                 </div>
                 <button
                   type="button"
