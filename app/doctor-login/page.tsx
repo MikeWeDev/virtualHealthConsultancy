@@ -52,7 +52,7 @@ export default function DoctorLoginPage() {
               <div className="space-y-4 p-6">
                 <div>
                   <h2 className="text-xl font-semibold text-white">{doctor.Name}</h2>
-                  <p className="text-sm text-slate-400">{doctor.type}</p>
+                  <p className="text-sm text-slate-400">{doctor.type || 'Specialist'}</p>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-slate-500">
                   <span className="rounded-full bg-slate-800 px-3 py-1">ID {doctor.id}</span>
