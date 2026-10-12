@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,8 +10,10 @@ import { useUser, createUserSession } from '../context/UserContext';
 export default function DoctorLoginPage() {
   const router = useRouter();
   const { setUser } = useUser();
+  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
 
   const handleDoctorSelect = (doctor: any) => {
+    setSelectedDoctorId(doctor.id);
     const session = createUserSession({ name: doctor.Name, role: 'doctor', doctorId: doctor.id });
     setUser(session);
     document.cookie = `user=${encodeURIComponent(JSON.stringify(session))}; path=/; max-age=${60 * 60 * 24 * 7}`;
@@ -62,9 +65,10 @@ export default function DoctorLoginPage() {
                 <button
                   type="button"
                   onClick={() => handleDoctorSelect(doctor)}
-                  className="w-full rounded-full bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  disabled={selectedDoctorId !== null}
+                  className="w-full rounded-full bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-wait disabled:bg-emerald-300 disabled:text-slate-800"
                 >
-                  Login as this doctor
+                  {selectedDoctorId === doctor.id ? 'Opening dashboard...' : 'Login as this doctor'}
                 </button>
               </div>
             </div>
