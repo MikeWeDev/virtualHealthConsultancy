@@ -46,6 +46,7 @@ export default function DoctorLoginPage() {
                   src={doctor.img}
                   alt={doctor.Name}
                   fill
+                  sizes="(min-width: 1280px) 400px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className="object-cover"
                 />
               </div>
